@@ -1,0 +1,10 @@
+#ifndef SECURE_CLOUD_STORAGE_LIST_H
+#define SECURE_CLOUD_STORAGE_LIST_H
+
+
+class List {
+
+};
+
+
+#endif //SECURE_CLOUD_STORAGE_LIST_H

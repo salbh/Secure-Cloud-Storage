@@ -1,0 +1,10 @@
+#ifndef SECURE_CLOUD_STORAGE_CLIENT_H
+#define SECURE_CLOUD_STORAGE_CLIENT_H
+
+
+class Client {
+
+};
+
+
+#endif //SECURE_CLOUD_STORAGE_CLIENT_H

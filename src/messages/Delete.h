@@ -1,0 +1,10 @@
+#ifndef SECURE_CLOUD_STORAGE_DELETE_H
+#define SECURE_CLOUD_STORAGE_DELETE_H
+
+
+class Delete {
+
+};
+
+
+#endif //SECURE_CLOUD_STORAGE_DELETE_H

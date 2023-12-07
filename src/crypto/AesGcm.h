@@ -1,0 +1,10 @@
+#ifndef SECURE_CLOUD_STORAGE_AESGCM_H
+#define SECURE_CLOUD_STORAGE_AESGCM_H
+
+
+class AesGcm {
+
+};
+
+
+#endif //SECURE_CLOUD_STORAGE_AESGCM_H

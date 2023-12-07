@@ -1,0 +1,10 @@
+#ifndef SECURE_CLOUD_STORAGE_RENAME_H
+#define SECURE_CLOUD_STORAGE_RENAME_H
+
+
+class Rename {
+
+};
+
+
+#endif //SECURE_CLOUD_STORAGE_RENAME_H

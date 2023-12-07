@@ -1,0 +1,10 @@
+#ifndef SECURE_CLOUD_STORAGE_SERVER_H
+#define SECURE_CLOUD_STORAGE_SERVER_H
+
+
+class Server {
+
+};
+
+
+#endif //SECURE_CLOUD_STORAGE_SERVER_H

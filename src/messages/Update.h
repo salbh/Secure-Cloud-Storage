@@ -1,0 +1,10 @@
+#ifndef SECURE_CLOUD_STORAGE_UPDATE_H
+#define SECURE_CLOUD_STORAGE_UPDATE_H
+
+
+class Update {
+
+};
+
+
+#endif //SECURE_CLOUD_STORAGE_UPDATE_H

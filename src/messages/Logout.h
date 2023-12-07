@@ -1,0 +1,10 @@
+#ifndef SECURE_CLOUD_STORAGE_LOGOUT_H
+#define SECURE_CLOUD_STORAGE_LOGOUT_H
+
+
+class Logout {
+
+};
+
+
+#endif //SECURE_CLOUD_STORAGE_LOGOUT_H
