@@ -10,9 +10,13 @@ class SocketManager {
 
 public:
     SocketManager(string ip_address, int port, int max_request);
+    SocketManager();
     ~SocketManager();
 
-    int initSocket(string ip_address, int port);
+    int initSocket(string ip_address, int port, sockaddr_in server_address);
+    int send();
+    int receive();
+    int accept();
 
 };
 
