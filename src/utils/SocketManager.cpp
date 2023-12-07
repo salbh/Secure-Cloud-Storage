@@ -9,7 +9,15 @@
 
 #include "SocketManager.h"
 
-
+/**
+ * Initializes and configures a socket.
+ *
+ * @param ip_address IP address to bind the socket to.
+ * @param port Port number to bind the socket to.
+ * @param server_address Structure to hold server address information.
+ *
+ * @return The socket descriptor on success, or -1 on error.
+ */
 int SocketManager::initSocket(string ip_address, int port, sockaddr_in server_address) {
 
     //socket creation
