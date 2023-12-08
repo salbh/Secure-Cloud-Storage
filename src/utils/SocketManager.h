@@ -15,10 +15,9 @@ public:
     ~SocketManager();
 
     int initSocket(string ip_address, int port, sockaddr_in server_address);
-    int send();
-    int receive();
     int accept();
-
+    int send(uint8_t *message_buffer, int message_buffer_size);
+    int receive(uint8_t *message_buffer, int message_buffer_size);
 };
 
 

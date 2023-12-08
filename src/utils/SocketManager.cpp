@@ -19,7 +19,6 @@
  * @return The socket descriptor on success, or -1 on error.
  */
 int SocketManager::initSocket(string ip_address, int port, sockaddr_in server_address) {
-
     //socket creation
     m_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -39,7 +38,6 @@ int SocketManager::initSocket(string ip_address, int port, sockaddr_in server_ad
  * @param max_requests max number of clients simultaneously waiting
  */
 SocketManager::SocketManager(string server_ip, int server_port, int max_requests) {
-
     sockaddr_in server_address{};
 
     //create and check the socket
@@ -64,7 +62,6 @@ SocketManager::SocketManager(string server_ip, int server_port, int max_requests
  * @param server_port ip of the server
  */
 SocketManager::SocketManager(string server_ip, int server_port) {
-
     sockaddr_in server_address{};
 
     //create and check the socket
@@ -82,16 +79,31 @@ SocketManager::~SocketManager() {
     close(m_socket);
 }
 
-int SocketManager::send() {
-
-}
-
-int SocketManager::receive() {
+int SocketManager::send(uint8_t* message_buffer, int message_buffer_size) {
+    if (::send(m_socket, message_buffer, message_buffer_size, 0) == -1) {
+        cerr << "SocketManager - Error while sending the message" << endl;
+        return -1;
+    }
     return 0;
 }
 
-int SocketManager::accept() {
+int SocketManager::receive(uint8_t* message_buffer, int message_buffer_size) {
+    int result = ::recv(m_socket, message_buffer, message_buffer_size, MSG_WAITALL);
+    if (result == 0) {
+        cerr << "SocketManager - Error: connection closed!" << endl;
+        return -1;
+    } else if (result == -1){
+        cerr << "SocketManager - Error while receiving the message!" << endl;
+        return -1;
+    } else if (result != message_buffer_size) {
+        cerr << "SocketManager - Error: uncorrect message size!" << endl;
+        return -1;
+    } else {
+        return 0;
+    }
+}
 
+int SocketManager::accept() {
     sockaddr_in client_address{};
     int client_address_size = sizeof(client_address);
     int socket_descriptor = ::accept(m_socket, (struct sockaddr*) &client_address,
