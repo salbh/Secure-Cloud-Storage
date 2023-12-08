@@ -6,11 +6,12 @@
 using namespace std;
 
 class SocketManager {
+
     int m_socket;
 
 public:
-    SocketManager(string ip_address, int port, int max_request);
-    SocketManager();
+    SocketManager(string server_ip, int server_port, int max_request);
+    SocketManager(string server_ip, int server_port);
     ~SocketManager();
 
     int initSocket(string ip_address, int port, sockaddr_in server_address);

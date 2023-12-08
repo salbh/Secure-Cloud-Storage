@@ -34,16 +34,16 @@ int SocketManager::initSocket(string ip_address, int port, sockaddr_in server_ad
 
 /**
  * Server socket constructor
- * @param ip_address of the server
- * @param port of the server
+ * @param server_ip ip of the server
+ * @param server_port port of the server
  * @param max_requests max number of clients simultaneously waiting
  */
-SocketManager::SocketManager(string ip_address, int port, int max_requests) {
+SocketManager::SocketManager(string server_ip, int server_port, int max_requests) {
 
-    sockaddr_in server_address;
+    sockaddr_in server_address{};
 
     //create and check the socket
-    if (initSocket(ip_address, port, server_address) == -1) {
+    if (initSocket(server_ip, server_port, server_address) == -1) {
         cerr << "SocketManager - Error during socket creation!" << endl;
     }
 
@@ -56,19 +56,34 @@ SocketManager::SocketManager(string ip_address, int port, int max_requests) {
     if (listen(m_socket, max_requests) == -1) {
         cerr << "SocketManager - Error while opening the socket!" << endl;
     }
-
-
 }
 
-SocketManager::SocketManager() {
-}
+/**
+ * Client socket constructor
+ * @param server_ip ip of the server
+ * @param server_port ip of the server
+ */
+SocketManager::SocketManager(string server_ip, int server_port) {
 
+    sockaddr_in server_address{};
+
+    //create and check the socket
+    if (initSocket(server_ip, server_port, server_address) == -1) {
+        cerr << "SocketManager - Error during socket creation!" << endl;
+    }
+
+    // connection request to the server socket
+    if (connect(m_socket, (struct sockaddr*) &server_address, sizeof(server_address)) == -1) {
+        cerr << "SocketManager - Error during the connection request" << endl;
+    }
+}
 
 SocketManager::~SocketManager() {
+    close(m_socket);
 }
 
 int SocketManager::send() {
-    return 0;
+
 }
 
 int SocketManager::receive() {
@@ -76,5 +91,14 @@ int SocketManager::receive() {
 }
 
 int SocketManager::accept() {
-    return 0;
+
+    sockaddr_in client_address{};
+    int client_address_size = sizeof(client_address);
+    int socket_descriptor = ::accept(m_socket, (struct sockaddr*) &client_address,
+            (unsigned int*) &client_address_size);
+    if (socket_descriptor == -1) {
+        cerr << "SocketManager - Error during the connection request handling!" << endl;
+        return socket_descriptor;
+    }
+    return socket_descriptor;
 }
