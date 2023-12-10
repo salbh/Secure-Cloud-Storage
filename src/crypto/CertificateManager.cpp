@@ -21,8 +21,8 @@ CertificateManager* CertificateManager::m_certificate_manager_instance = nullptr
  * CertificateManager Constructor. Performs the following operations:
  * 1) Loads the CA Certificate from a file
  * 2) Loads the Certificate Revocation List (CRL) from a file
- * 3) Creates a new Certificate Store and store the certificates loaded (CA and CRL)
- * 4) Free the memory allocated for CA Certificate and CRL
+ * 3) Creates a new Certificate Store and stores the certificates loaded (CA and CRL)
+ * 4) Frees the memory allocated for CA Certificate and CRL
  */
 CertificateManager::CertificateManager() {
 
@@ -148,8 +148,52 @@ EVP_PKEY *CertificateManager::getPublicKey(X509 *certificate) {
 }
 
 
-//Function to serialize a certificate (when has to be sent)
+//
+/**
+ * Function to serialize a certificate (when has to be sent)
+ * @param certificate certificate to be serialized
+ * @param serialized_certificate pointer to the certificate structure which has to be serialized
+ * @param serialized_certificate_size size of the certificate (to be updated with the serialized size value)
+ * @return
+ */
+int CertificateManager::serializeCertificate(X509* certificate, uint8_t*& serialized_certificate, int& serialized_certificate_size) {
 
+    // Create a BIO (memory-based I/O) object to store serialized data
+    BIO* bio = BIO_new(BIO_s_mem());
+    if (!bio) {
+        cerr << "CertificateManager - Failed to create BIO" << endl;
+        return -1;
+    }
+
+    // Write the X.509 certificate to the BIO in PEM format
+    if (!PEM_write_bio_X509(bio, certificate)) {
+        cerr << "CertificateManager - Failed to write the certificate in the BIO" << endl;
+        BIO_free(bio);
+        return -1;
+    }
+
+    // Determine the size of the serialized data in the BIO and update the certificate size variable
+    serialized_certificate_size = BIO_pending(bio);
+
+    // Allocate memory for the serialized certificate (array of uint8_t) and update the certificate pointer
+    serialized_certificate = new uint8_t[serialized_certificate_size];
+
+    // Check if the serialized data written in the BIO allocated memory are correct
+    if (BIO_read(bio, serialized_certificate, serialized_certificate_size) != serialized_certificate_size) {
+        cerr << "CertificateManager - Failed to read the serialized certificate" << endl;
+        //Free the memory associated with the BIO
+        BIO_free(bio);
+        //Free the memory allocated for the serialized certificate
+        delete[] serialized_certificate;
+        return -1;
+    }
+
+    //Free the memory associated with the BIO
+    BIO_free(bio);
+
+    // Return success status
+    return 0;
+}
 
 //Function to deserialize a certificate (when it is received)
 

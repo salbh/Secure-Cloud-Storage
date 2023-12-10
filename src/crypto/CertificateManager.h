@@ -18,6 +18,7 @@ public:
     static X509* loadCertificate(const char* certificate_path);
     static bool verifyCertificate(X509* certificate);
     static EVP_PKEY* getPublicKey(X509* certificate);
+    static int serializeCertificate(X509 *certificate, uint8_t *&serialized_certificate, int &serialized_certificate_size);
 
     static void deleteInstance();
 
@@ -35,7 +36,6 @@ private:
 
     CertificateManager();
     ~CertificateManager();
-
 
 };
 
