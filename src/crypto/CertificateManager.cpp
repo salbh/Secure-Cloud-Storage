@@ -151,12 +151,12 @@ EVP_PKEY *CertificateManager::getPublicKey(X509 *certificate) {
 //
 /**
  * Function to serialize a certificate (when has to be sent)
- * @param certificate certificate to be serialized
- * @param serialized_certificate pointer to the certificate structure which has to be serialized
- * @param serialized_certificate_size size of the certificate (to be updated with the serialized size value)
- * @return
+ * @param certificate_to_serialize certificate to be serialized
+ * @param certificate_pointer pointer to the certificate structure which has to be serialized
+ * @param certificate_size_pointer pointer to the size value of the certificate (to be updated with the serialized size value)
+ * @return 0 if the serialization was successfull, -1 otherwise
  */
-int CertificateManager::serializeCertificate(X509* certificate, uint8_t*& serialized_certificate, int& serialized_certificate_size) {
+int CertificateManager::serializeCertificate(X509* certificate_to_serialize, uint8_t*& certificate_pointer, int& certificate_size_pointer) {
 
     // Create a BIO (memory-based I/O) object to store serialized data
     BIO* bio = BIO_new(BIO_s_mem());
@@ -166,25 +166,25 @@ int CertificateManager::serializeCertificate(X509* certificate, uint8_t*& serial
     }
 
     // Write the X.509 certificate to the BIO in PEM format
-    if (!PEM_write_bio_X509(bio, certificate)) {
+    if (!PEM_write_bio_X509(bio, certificate_to_serialize)) {
         cerr << "CertificateManager - Failed to write the certificate in the BIO" << endl;
         BIO_free(bio);
         return -1;
     }
 
     // Determine the size of the serialized data in the BIO and update the certificate size variable
-    serialized_certificate_size = BIO_pending(bio);
+    certificate_size_pointer = BIO_pending(bio);
 
     // Allocate memory for the serialized certificate (array of uint8_t) and update the certificate pointer
-    serialized_certificate = new uint8_t[serialized_certificate_size];
+    certificate_pointer = new uint8_t[certificate_size_pointer];
 
-    // Check if the serialized data written in the BIO allocated memory are correct
-    if (BIO_read(bio, serialized_certificate, serialized_certificate_size) != serialized_certificate_size) {
+    // Check if the serialized data written in the BIO allocated memory was successful
+    if (BIO_read(bio, certificate_pointer, certificate_size_pointer) != certificate_size_pointer) {
         cerr << "CertificateManager - Failed to read the serialized certificate" << endl;
         //Free the memory associated with the BIO
         BIO_free(bio);
         //Free the memory allocated for the serialized certificate
-        delete[] serialized_certificate;
+        delete[] certificate_pointer;
         return -1;
     }
 
@@ -195,7 +195,42 @@ int CertificateManager::serializeCertificate(X509* certificate, uint8_t*& serial
     return 0;
 }
 
-//Function to deserialize a certificate (when it is received)
+
+/**
+ * Function to deserialize a certificate (when it is received)
+ * @param certificate_pointer pointer to the certificate structure which has to be deserialized
+ * @param certificate_size_pointer pointer to the size value of the certificate (to be updated with the deserialized size value)
+ * @return the pointer to the deserialized certificate
+ */
+X509* CertificateManager::deserializeCertificate(uint8_t* certificate_pointer, int certificate_size_pointer) {
+
+    // Create a BIO (memory-based I/O) object to read serialized data and deserialize it
+    BIO* bio = BIO_new_mem_buf(certificate_pointer, certificate_size_pointer);
+    if (!bio) {
+        cerr << "CertificateManager - Failed to create BIO" << endl;
+        return nullptr;  // nullptr indicates failure
+    }
+
+    // Initialize the pointer for the deserialized X.509 certificate
+    X509* deserialized_certificate = nullptr;
+
+    //Read the X.509 certificate from the BIO in PEM format
+    deserialized_certificate = PEM_read_bio_X509(bio, NULL, NULL, NULL);
+
+    // Check if the certificate deserialization was successful
+    if (!deserialized_certificate) {
+        cerr << "CertificateManager - Failed to deserialize the certificate" << endl;
+        //Free the memory associated with the BIO
+        BIO_free(bio);
+        return nullptr;
+    }
+
+    //Free the memory associated with the BIO
+    BIO_free(bio);
+
+    // Return the pointer to the deserialized X.509 certificate
+    return deserialized_certificate;
+}
 
 
 /**
