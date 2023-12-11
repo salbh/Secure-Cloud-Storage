@@ -11,6 +11,8 @@ public:
     DH * generateLowLevelStructure();
     void loadDHParameters(DH *pSt);
     EVP_PKEY * generateEphemeralKey();
+    int serializeEphemeralKey(EVP_PKEY *ephemeral_key, uint8_t *&serialized_ephemeral_key,
+                          int &serialized_ephemeral_key_size);
 };
 
 
