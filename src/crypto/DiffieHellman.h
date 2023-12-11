@@ -3,7 +3,14 @@
 
 
 class DiffieHellman {
+    // Diffie-Hellman parameters
+    EVP_PKEY *m_dh_parameters;
 
+public:
+    DiffieHellman();
+    DH * generateLowLevelStructure();
+    void loadDHParameters(DH *pSt);
+    EVP_PKEY * generateEphemeralKey();
 };
 
 
