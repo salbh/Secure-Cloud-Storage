@@ -52,7 +52,7 @@ DH * DiffieHellman::generateLowLevelStructure() {
         BIGNUM *p, *g;
 
         if (dh_structure == NULL) {
-            cerr << "DiffieHellman - Failed to create DH structure" << endl;
+            cerr << "DiffieHellman - Error in creating the DH structure" << endl;
             return nullptr;
         }
         p = BN_bin2bn(dhp_2048, sizeof(dhp_2048), NULL);
@@ -60,7 +60,7 @@ DH * DiffieHellman::generateLowLevelStructure() {
 
         // Set DH parameters (p, q, and g) for the DH structure
         if (p == NULL || g == NULL || !DH_set0_pqg(dh_structure, p, NULL, g)) {
-            cerr << "DiffieHellman - Failed to set DH parameters" << endl;
+            cerr << "DiffieHellman - Error during the setting of the DH parameters" << endl;
             DH_free(dh_structure);
             BN_free(p);
             BN_free(g);
@@ -76,12 +76,12 @@ DH * DiffieHellman::generateLowLevelStructure() {
 void DiffieHellman::loadDHParameters(DH *dh_structure) {
     // Create a new EVP_PKEY structure for holding DH parameters
     if (NULL == (m_dh_parameters = EVP_PKEY_new())) {
-        cerr << "DiffieHellman - Failed to create EVP_PKEY structure for DH parameters" << endl;
+        cerr << "DiffieHellman - Error in creating the EVP_PKEY structure for DH parameters" << endl;
     }
 
     // Set the DH parameters in the EVP_PKEY structure
     if (1 != EVP_PKEY_set1_DH(m_dh_parameters, dh_structure)) {
-        cerr << "DiffieHellman - Failed to set DH parameters in EVP_PKEY structure" << endl;
+        cerr << "DiffieHellman - Error during the setting of the DH parameters in EVP_PKEY structure" << endl;
     }
     // Free the memory associated with the original DH structure
     DH_free(dh_structure);
@@ -92,15 +92,15 @@ EVP_PKEY * DiffieHellman::generateEphemeralKey() {
     // Create context for the key generation
     EVP_PKEY_CTX *dh_context;
     if(!(dh_context = EVP_PKEY_CTX_new(m_dh_parameters, NULL))) {
-        cerr << "DiffieHellman - Failed to create key generation context" << endl;
+        cerr << "DiffieHellman - Error in creating the key generation context" << endl;
     }
     // Generate a new key
     EVP_PKEY *dh_ephemeral_key = NULL;
     if(1 != EVP_PKEY_keygen_init(dh_context)){
-        cerr << "DiffieHellman - Failed to initialize key generation" << endl;
+        cerr << "DiffieHellman - Error during the initialization of the key generation" << endl;
     }
     if(1 != EVP_PKEY_keygen(dh_context, &dh_ephemeral_key)) {
-        cerr << "DiffieHellman - Failed to generate ephemeral key" << endl;
+        cerr << "DiffieHellman - Error in generating the ephemeral key" << endl;
     }
     // Cleanup the context
     EVP_PKEY_CTX_free(dh_context);
@@ -119,13 +119,13 @@ int DiffieHellman::serializeEphemeralKey(EVP_PKEY* ephemeral_key, uint8_t*& seri
     // Create a new memory BIO structure
     BIO *bio = BIO_new(BIO_s_mem());
     if (!bio) {
-        cerr << "DiffieHellman - Failed to create the memory BIO structure" << endl;
+        cerr << "DiffieHellman - Error in creating the memory BIO structure" << endl;
         BIO_free(bio);
         return -1;
     }
     // Serializes the ephemeral key (saved in an EVP_PKEY structure) into PEM format and writes it in the BIO
     if (!PEM_write_bio_PUBKEY(bio, ephemeral_key)) {
-        cerr << "DiffieHellman - Failed to write the ephemeral key into the BIO structure" << endl;
+        cerr << "DiffieHellman - Error in creating the ephemeral key into the BIO structure" << endl;
         BIO_free(bio);
         return -1;
     }
@@ -133,7 +133,7 @@ int DiffieHellman::serializeEphemeralKey(EVP_PKEY* ephemeral_key, uint8_t*& seri
     const void *memory_BIO_buffer;
     serialized_ephemeral_key_size = BIO_get_mem_data(bio, &memory_BIO_buffer);
     if (serialized_ephemeral_key_size < 0) {
-        cerr << "DiffieHellman - Failed to get memory data from BIO" << endl;
+        cerr << "DiffieHellman - Error in getting the memory data from BIO" << endl;
         BIO_free(bio);
         return -1;
     }
@@ -142,7 +142,7 @@ int DiffieHellman::serializeEphemeralKey(EVP_PKEY* ephemeral_key, uint8_t*& seri
     // Reads and extracts the serialized ephemeral key from the BIO
     int read = BIO_read(bio, serialized_ephemeral_key, serialized_ephemeral_key_size);
     if (read != serialized_ephemeral_key_size) {
-        cerr << "[-] (DiffieHellman) Failed to write the serialized key in the buffer" << endl;
+        cerr << "DiffieHellman - Error in writing the serialized key into the buffer" << endl;
         BIO_free(bio);
         delete[] serialized_ephemeral_key;
         return -1;
@@ -151,3 +151,77 @@ int DiffieHellman::serializeEphemeralKey(EVP_PKEY* ephemeral_key, uint8_t*& seri
     BIO_free(bio);
     return 0;
 }
+
+/**
+ * Deserialize the ephemeral key from a serialized buffer
+ *
+ * @param serialized_ephemeral_key       The buffer containing the serialized key data
+ * @param serialized_ephemeral_key_size  The size of the serialized ephemeral key buffer
+ * @return The deserialized ephemeral key (EVP_PKEY*), or nullptr on failure
+ */
+EVP_PKEY* DiffieHellman::deserializeEphemeralKey(uint8_t* serialized_ephemeral_key, int serialized_ephemeral_key_size) {
+    // Create a new memory BIO structure
+    BIO *bio = BIO_new(BIO_s_mem());
+    if (!bio) {
+        cerr << "DiffieHellman - Error in creating the memory BIO structure" << endl;
+        return nullptr;
+    }
+    // Write the serialized key data into the memory BIO
+    if (BIO_write(bio, serialized_ephemeral_key, serialized_ephemeral_key_size) <= 0) {
+        cerr << "DiffieHellman - Error in writing the serialized key into the BIO" << endl;
+        BIO_free(bio);
+        return nullptr;
+    }
+    // Read the deserialized public key from the BIO
+    EVP_PKEY* deserialized_key = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
+    if (!deserialized_key) {
+        cerr << "DiffieHellman - Error in reading the deserialized key from the BIO" << endl;
+        BIO_free(bio);
+        return nullptr;
+    }
+    // Free the memory BIO structure
+    BIO_free(bio);
+    return deserialized_key;
+}
+
+/**
+ * Derives a shared secret from the given own ephemeral key and the peer's ephemeral key.
+ *
+ * @param own_ephemeral_key     The local ephemeral key for the Diffie-Hellman key exchange.
+ * @param peer_ephemeral_key    The peer's ephemeral key received during the key exchange.
+ * @param shared_secret         Output parameter to store the derived shared secret.
+ * @param shared_secret_size    Output parameter to store the size of the derived shared secret.
+ * @return                      0 on success, -1 on failure.
+ */
+int DiffieHellman::deriveSharedSecret(EVP_PKEY* own_ephemeral_key, EVP_PKEY* peer_ephemeral_key,
+                                      unsigned char*& shared_secret, size_t& shared_secret_size) {
+    // Create a context for deriving the shared secret
+    EVP_PKEY_CTX* derive_ctx = EVP_PKEY_CTX_new(own_ephemeral_key, NULL);
+    if (!derive_ctx) {
+        cerr << "DiffieHellman - Error in creating the context for deriving the shared secret" << endl;
+        return -1;
+    }
+    // Initialize the context for key derivation
+    if (EVP_PKEY_derive_init(derive_ctx) <= 0) {
+        cerr << "DiffieHellman - Error in initialization of the context for deriving the shared secret" << endl;
+        return -1;
+    }
+    // Set the peer's ephemeral key in the context
+    if (EVP_PKEY_derive_set_peer(derive_ctx, peer_ephemeral_key) <= 0) {
+        cerr << "DiffieHellman - Error in setting the peer ephemeral key in the context" << endl;
+        return -1;
+    }
+    // Determine the buffer size of the shared secret by performing a derivation, but writing the result nowhere
+    EVP_PKEY_derive(derive_ctx, NULL, &shared_secret_size);
+    // Allocate memory for the shared secret buffer
+    shared_secret = new unsigned char[int(shared_secret_size)];
+    // Perform again the derivation and store the derived shared secret in the shared_secret buffer
+    if (EVP_PKEY_derive(derive_ctx, shared_secret, &shared_secret_size) <= 0) {
+        cerr << "DiffieHellman - Error in deriving the shared secret" << endl;
+        return -1;
+    }
+    // Cleanup the context
+    EVP_PKEY_CTX_free(derive_ctx);
+    return 0;
+}
+
