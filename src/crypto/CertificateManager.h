@@ -9,34 +9,34 @@ using namespace std;
 
 
 class CertificateManager {
-    static X509_STORE* m_certificate_store;
+    X509_STORE* m_certificate_store;
+    static CertificateManager* m_certificate_manager_instance;
 
     const char* CA_CERTIFICATE_PATH = "resources/certificates/CA_certificate.pem";
     const char* CRL_PATH = "resources/certificates/CA_crl.pem";
 
 public:
-    static X509* loadCertificate(const char* certificate_path);
-    static bool verifyCertificate(X509* certificate);
-    static EVP_PKEY* getPublicKey(X509* certificate);
-    static int serializeCertificate(X509 *certificate, uint8_t *&certificate_pointer, int &certificate_size_pointer);
-    static X509* deserializeCertificate(uint8_t* certificate_pointer, int certificate_size_pointer);
+    X509* loadCertificate(const char* certificate_path);
+    bool verifyCertificate(X509* certificate);
+    EVP_PKEY* getPublicKey(X509* certificate);
+    int serializeCertificate(X509 *certificate, uint8_t *&certificate_pointer, int &certificate_size_pointer);
+    X509* deserializeCertificate(uint8_t* certificate_pointer, int certificate_size_pointer);
 
     static void deleteInstance();
 
-
-private:
-    static CertificateManager* m_certificate_manager_instance;
-
     //Function to manage the singleton (check and allocate the singleton class)
-    static CertificateManager& createInstance() {
+    static CertificateManager* getInstance() {
         if(!m_certificate_manager_instance) {
             m_certificate_manager_instance = new CertificateManager();
         }
-        return *m_certificate_manager_instance;
+        return m_certificate_manager_instance;
     }
 
     CertificateManager();
     ~CertificateManager();
+
+
+private:
 
 };
 
