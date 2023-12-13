@@ -1,7 +1,9 @@
 #ifndef SECURE_CLOUD_STORAGE_DIFFIEHELLMAN_H
 #define SECURE_CLOUD_STORAGE_DIFFIEHELLMAN_H
 
-
+#include <openssl/dh.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
 #include <cstdint>
 
 class DiffieHellman {
