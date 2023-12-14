@@ -9,7 +9,7 @@ AesGcm::AesGcm(const unsigned char* key) {
     m_block_size = EVP_CIPHER_block_size(m_cipher);
     m_iv_len = EVP_CIPHER_iv_length(m_cipher);
 
-    m_key_len = EVP_CIPHER_get_key_length(m_cipher);
+    m_key_len = EVP_CIPHER_key_length(m_cipher);
     m_key = new unsigned char[m_key_len];
     memcpy(m_key, key, m_key_len);
 }
