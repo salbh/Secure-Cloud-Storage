@@ -12,10 +12,13 @@ class CertificateManager {
     X509_STORE* m_certificate_store;
     static CertificateManager* m_certificate_manager_instance;
 
-    const char* CA_CERTIFICATE_PATH = "resources/certificates/CA_certificate.pem";
-    const char* CRL_PATH = "resources/certificates/CA_crl.pem";
+    const char* CA_CERTIFICATE_PATH = "../resources/certificates/CA_certificate.pem";
+    const char* CRL_PATH = "../resources/certificates/CA_crl.pem";
 
 public:
+    CertificateManager();
+    ~CertificateManager();
+
     X509* loadCertificate(const char* certificate_path);
     bool verifyCertificate(X509* certificate);
     EVP_PKEY* getPublicKey(X509* certificate);
@@ -31,9 +34,6 @@ public:
         }
         return m_certificate_manager_instance;
     }
-
-    CertificateManager();
-    ~CertificateManager();
 
 
 private:

@@ -54,19 +54,19 @@ CertificateManager::CertificateManager() {
         cerr << "CertificateManager - Failed to create the store" << endl;
         return;
     }
-    //Adds the CA certificate (trsuted) to the store
-    if (X509_STORE_add_cert(m_certificate_store, ca_certificate) == -1) {
+    //Adds the CA certificate (trusted) to the store
+    if (X509_STORE_add_cert(m_certificate_store, ca_certificate) != 1) {
         cerr << "CertificateManager - Failed to add CA certificate to the store" << endl;
         return;
     }
     //Adds the CRL (trusted) to the store
-    if (X509_STORE_add_crl(m_certificate_store, crl) == -1) {
+    if (X509_STORE_add_crl(m_certificate_store, crl) != 1) {
         cerr << "CertificateManager - Failed to add CRL to the store" << endl;
         return;
     }
 
     //Configures the store to check against the CRL every valid certificate before returning a successful validation
-    if (X509_STORE_set_flags(m_certificate_store, X509_V_FLAG_CRL_CHECK) == -1) {
+    if (X509_STORE_set_flags(m_certificate_store, X509_V_FLAG_CRL_CHECK) != 1) {
         cerr << "CertificateManager - Failed set the store flags" << endl;
         return;
     }
@@ -111,26 +111,26 @@ X509 *CertificateManager::loadCertificate(const char* certificate_path) {
 bool CertificateManager::verifyCertificate(X509 *certificate) {
 
     //Allocates a new certificate-verification context
-    X509_STORE_CTX* certificate_verificaton_ctx = X509_STORE_CTX_new();
-    if (!certificate_verificaton_ctx) {
+    X509_STORE_CTX* certificate_verification_ctx = X509_STORE_CTX_new();
+    if (!certificate_verification_ctx) {
         cerr << "CertificateManager - Failed to create the certificate-verification context" << endl;
         return false;
     }
 
     //Initializes the certificate-verification context (context, store and certificate to verify)
-    if (X509_STORE_CTX_init(certificate_verificaton_ctx, m_certificate_store, certificate,NULL) == -1) {
+    if (X509_STORE_CTX_init(certificate_verification_ctx, m_certificate_store, certificate,NULL) != 1) {
         cerr << "CertificateManager - Failed to initialize the certificate-verification context" << endl;
         return false;
     }
 
     //Verifies the certificate passed at initialization time
-    if (X509_verify_cert(certificate_verificaton_ctx) == -1) {
+    if (X509_verify_cert(certificate_verification_ctx) != 1) {
         cerr << "CertificateManager - Certificate verification failed!" << endl;
         return false;
     }
 
     //Deallocates the certificate-verification context
-    X509_STORE_CTX_free(certificate_verificaton_ctx);
+    X509_STORE_CTX_free(certificate_verification_ctx);
     return true;
 }
 
@@ -154,7 +154,7 @@ EVP_PKEY *CertificateManager::getPublicKey(X509 *certificate) {
  * @param certificate_to_serialize certificate to be serialized
  * @param certificate_pointer pointer to the certificate structure which has to be serialized
  * @param certificate_size_pointer pointer to the size value of the certificate (to be updated with the serialized size value)
- * @return 0 if the serialization was successfull, -1 otherwise
+ * @return 0 if the serialization was successful, -1 otherwise
  */
 int CertificateManager::serializeCertificate(X509* certificate_to_serialize, uint8_t*& certificate_pointer, int& certificate_size_pointer) {
 
