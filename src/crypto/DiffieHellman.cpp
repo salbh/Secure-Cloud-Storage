@@ -225,4 +225,3 @@ int DiffieHellman::deriveSharedSecret(EVP_PKEY* own_ephemeral_key, EVP_PKEY* pee
     EVP_PKEY_CTX_free(derive_ctx);
     return 0;
 }
-
