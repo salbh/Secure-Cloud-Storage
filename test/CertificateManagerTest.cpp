@@ -11,6 +11,7 @@ CertificateManager* getInstanceTest() {
     cout << "CertificateManagerTest - get instance test " << endl;
     CertificateManager* certificate_manager = CertificateManager::getInstance();
     assert(certificate_manager != nullptr);
+    cout << "+TEST OK\n" << endl;
     return certificate_manager;
 }
 
