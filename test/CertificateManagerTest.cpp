@@ -33,8 +33,6 @@ void verifyCertificateTest(CertificateManager* certificate_manager, X509* certif
 void getPublicKeyTest(CertificateManager* certificate_manager, X509* certificate) {
     cout << "CertificateManagerTest - get public key test " << endl;
     EVP_PKEY* public_key = certificate_manager->getPublicKey(certificate);
-    //cout << "PUBLIC KEY : " << endl;
-    //BIO_dump_fp(stdout, (const char*)public_key, 256);
     assert(public_key!= nullptr);
     cout << "+TEST OK+\n" << endl;
 }
@@ -74,7 +72,7 @@ int main() {
     //serializeLogoutMessage and deserialize certificate test
     serializeDeserializeCertificateTest(certificate_manager, certificate);
 
-    //free memory and delete certificatre manager instance
+    //free memory and delete certificate manager instance
     X509_free(certificate);
     CertificateManager::deleteInstance();
 
