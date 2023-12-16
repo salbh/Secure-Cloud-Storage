@@ -150,7 +150,7 @@ EVP_PKEY *CertificateManager::getPublicKey(X509 *certificate) {
 
 //
 /**
- * Function to serialize a certificate (when has to be sent)
+ * Function to serializeLogoutMessage a certificate (when has to be sent)
  * @param certificate_to_serialize certificate to be serialized
  * @param certificate_pointer pointer to the certificate structure which has to be serialized
  * @param certificate_size_pointer pointer to the size value of the certificate (to be updated with the serialized size value)

@@ -11,7 +11,7 @@ CertificateManager* getInstanceTest() {
     cout << "CertificateManagerTest - get instance test " << endl;
     CertificateManager* certificate_manager = CertificateManager::getInstance();
     assert(certificate_manager != nullptr);
-    cout << "+TEST OK\n" << endl;
+    cout << "+TEST OK+\n" << endl;
     return certificate_manager;
 }
 
@@ -71,7 +71,7 @@ int main() {
     //getPublicKey
     getPublicKeyTest(certificate_manager, certificate);
 
-    //serialize and deserialize certificate test
+    //serializeLogoutMessage and deserialize certificate test
     serializeDeserializeCertificateTest(certificate_manager, certificate);
 
     //free memory and delete certificatre manager instance
