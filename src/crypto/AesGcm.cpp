@@ -4,39 +4,21 @@
 
 using namespace std;
 
-/**
- * Constructor for AesGcm class
- * @param key The encryption key
- */
 AesGcm::AesGcm(const unsigned char* key) {
     m_cipher = EVP_aes_128_gcm();
     m_block_size = EVP_CIPHER_block_size(m_cipher);
     m_iv_len = EVP_CIPHER_iv_length(m_cipher);
 
-    m_key_len = EVP_CIPHER_key_length(m_cipher);
+    m_key_len = EVP_CIPHER_get_key_length(m_cipher);
     m_key = new unsigned char[m_key_len];
     memcpy(m_key, key, m_key_len);
 }
 
-/**
- * Destructor for AesGcm class
- * Cleans up resources and securely clears sensitive data
- */
 AesGcm::~AesGcm() {
     OPENSSL_cleanse(m_key, m_key_len);
     delete[] m_key;
 }
 
-/**
- * Encryption function
- * @param plaintext The input plaintext
- * @param plaintext_len Length of the plaintext
- * @param aad Additional authenticated data
- * @param aad_len Length of the additional authenticated data
- * @param ciphertext The output ciphertext
- * @param tag The authentication tag
- * @return Length of the ciphertext on success, -1 on failure
- */
 int AesGcm::encrypt(unsigned char* plaintext, int plaintext_len, unsigned char* aad, int aad_len,
                     unsigned char*& ciphertext, unsigned char* tag) {
     int len;
@@ -94,17 +76,6 @@ int AesGcm::encrypt(unsigned char* plaintext, int plaintext_len, unsigned char* 
     return ciphertext_len;
 }
 
-/**
- * Decryption function
- * @param ciphertext The input ciphertext
- * @param ciphertext_len Length of the ciphertext
- * @param aad Additional authenticated data
- * @param aad_len Length of the additional authenticated data
- * @param iv The initialization vector
- * @param tag The authentication tag
- * @param plaintext The output plaintext
- * @return Length of the plaintext on success, -1 on failure
- */
 int AesGcm::decrypt(unsigned char* ciphertext, int ciphertext_len, unsigned char* aad, int aad_len,
                     unsigned char* iv, unsigned char* tag, unsigned char*& plaintext) {
     int len;
@@ -157,11 +128,6 @@ int AesGcm::decrypt(unsigned char* ciphertext, int ciphertext_len, unsigned char
     }
 }
 
-/**
- * Error handling function for encryption
- * @param msg Error message
- * @return -1 to indicate an error
- */
 int AesGcm::handleErrorEncrypt(const char* msg) {
     cerr << "AesGCM - Error during encryption: " << msg << endl;
     delete[] m_iv;
@@ -169,11 +135,6 @@ int AesGcm::handleErrorEncrypt(const char* msg) {
     return -1;
 }
 
-/**
- * Error handling function for decryption
- * @param msg Error message
- * @return -1 to indicate an error
- */
 int AesGcm::handleErrorDecrypt(const char* msg) {
     cerr << "AesGCM - Error during decryption: " << msg << endl;
     delete m_plaintext;
