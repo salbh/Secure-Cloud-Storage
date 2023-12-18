@@ -14,6 +14,8 @@ class DiffieHellman {
 
 public:
     DiffieHellman();
+    ~DiffieHellman();
+    EVP_PKEY *getDhParameters() const;
     DH * generateLowLevelStructure();
     void loadDHParameters(DH *pSt);
     EVP_PKEY * generateEphemeralKey();
