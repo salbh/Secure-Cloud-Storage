@@ -19,8 +19,8 @@ public:
     Delete deserializeDeleteMessage(uint8_t *buffer);
 
 private:
-    uint8_t m_message_code{};
-    char m_file_name[FILE_NAME_LEN]{};
+    uint8_t m_message_code;
+    char m_file_name[FILE_NAME_LEN];
 };
 
 
