@@ -35,6 +35,8 @@ public:
     int handleErrorDecrypt(const char *msg);
 
     static constexpr unsigned int AES_TAG_LEN = 16;
+
+    unsigned char *getIV();
 };
 
 #endif //SECURE_CLOUD_STORAGE_AESGCM_H

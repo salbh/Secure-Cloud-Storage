@@ -170,6 +170,7 @@ int AesGcm::handleErrorEncrypt(const char* msg) {
     cerr << "AesGCM - Error during encryption: " << msg << endl;
     delete[] m_iv;
     delete[] m_ciphertext;
+    EVP_CIPHER_CTX_free(m_ctx);
     return -1;
 }
 
@@ -181,5 +182,10 @@ int AesGcm::handleErrorEncrypt(const char* msg) {
 int AesGcm::handleErrorDecrypt(const char* msg) {
     cerr << "AesGCM - Error during decryption: " << msg << endl;
     delete m_plaintext;
+    EVP_CIPHER_CTX_free(m_ctx);
     return -1;
+}
+
+unsigned char *AesGcm::getIV() {
+    return m_iv;
 }
