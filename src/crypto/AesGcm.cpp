@@ -97,7 +97,6 @@ int AesGcm::encrypt(unsigned char* plaintext, int plaintext_len, unsigned char* 
     return ciphertext_len;
 }
 
-
 /**
  * Decryption function
  * @param ciphertext The input ciphertext

@@ -23,10 +23,9 @@ private:
 public:
     AesGcm(const unsigned char* key);
     ~AesGcm();
-    int encrypt(unsigned char* plaintext, int plaintext_len,
-                unsigned char* aad, int aad_len,
-                unsigned char* &m_ciphertext,
-                unsigned char* tag);
+
+    int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *aad,
+                int aad_len, unsigned char *&ciphertext, unsigned char* tag);
 
     int decrypt(unsigned char* ciphertext, int ciphertext_len, unsigned char* aad,
                 int aad_len, unsigned char* iv, unsigned char* tag, unsigned char* &plaintext);
@@ -37,6 +36,8 @@ public:
     static constexpr unsigned int AES_TAG_LEN = 16;
 
     unsigned char *getIV();
+
+
 };
 
 #endif //SECURE_CLOUD_STORAGE_AESGCM_H

@@ -12,7 +12,7 @@ public:
     Delete();
     Delete(const string& file_name);
 
-    static constexpr long MESSAGE_CODE_PACKET_SIZE = 65 * sizeof(uint8_t);
+    static constexpr long MESSAGE_CODE_PACKET_SIZE = 71 * sizeof(uint8_t);
     static constexpr uint8_t FILE_NAME_LEN = 35;
 
     uint8_t *serializeDeleteMessage();

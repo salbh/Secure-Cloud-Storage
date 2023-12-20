@@ -3,6 +3,7 @@
 #include <string>
 #include <cstring>
 #include <openssl/rand.h>
+#include <iostream>
 
 using namespace std;
 
@@ -14,7 +15,11 @@ Delete::Delete(const string& file_name) {
 }
 
 uint8_t* Delete::serializeDeleteMessage() {
-    uint8_t* buffer = new uint8_t[MESSAGE_CODE_PACKET_SIZE];
+    uint8_t* buffer = new (nothrow) uint8_t[MESSAGE_CODE_PACKET_SIZE];
+    if (!buffer) {
+        cerr << "Delete - Error during serialization: Failed to allocate memory" << endl;
+        return nullptr;
+    }
 
     size_t position = 0;
     memcpy(buffer, &m_message_code, sizeof(uint8_t));
@@ -23,7 +28,11 @@ uint8_t* Delete::serializeDeleteMessage() {
     memcpy(buffer + position, &m_file_name, FILE_NAME_LEN * sizeof(char));
     position += FILE_NAME_LEN * sizeof(char);
 
-    RAND_bytes(buffer + position, MESSAGE_CODE_PACKET_SIZE - position);
+    if (RAND_bytes(buffer + position, MESSAGE_CODE_PACKET_SIZE - position) != 1) {
+        cerr << "Delete - Error during serialization: RAND_bytes failed" << endl;
+        delete[] buffer; // Release memory in case of failure
+        return nullptr;
+    }
 
     return buffer;
 }
