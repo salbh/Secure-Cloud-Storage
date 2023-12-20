@@ -86,13 +86,14 @@ int main() {
         //getPublicKey
         getPublicKeyTest(certificate_manager, certificate);
 
-        //serializeLogoutMessage and deserialize certificate test
+        //serialize and deserialize certificate test
         serializeDeserializeCertificateTest(certificate_manager, certificate);
 
         //free memory and delete certificate manager instance
         X509_free(certificate);
     }
 
+    //delete the certificate manager instance
     CertificateManager::deleteInstance();
     cout << "+ALL TESTS PASSED+" << endl;
 
