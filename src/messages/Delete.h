@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include "Config.h"
 
 using namespace std;
 
@@ -12,15 +13,12 @@ public:
     Delete();
     Delete(const string& file_name);
 
-    static constexpr long MESSAGE_CODE_PACKET_SIZE = 71 * sizeof(uint8_t);
-    static constexpr uint8_t FILE_NAME_LEN = 35;
-
     uint8_t *serializeDeleteMessage();
     Delete deserializeDeleteMessage(uint8_t *buffer);
 
 private:
     uint8_t m_message_code;
-    char m_file_name[FILE_NAME_LEN];
+    char m_file_name[Config::FILE_NAME_LEN];
 };
 
 
