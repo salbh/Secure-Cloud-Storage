@@ -12,7 +12,7 @@ class CertificateManager {
     X509_STORE* m_certificate_store;
     static CertificateManager* m_certificate_manager_instance;
 
-    const char* CA_CERTIFICATE_PATH = "../resources/certificates/CA_certificate.pem";
+    const char* CA_CERTIFICATE_PATH = "../resources/certificates/CA_cert.pem";
     const char* CRL_PATH = "../resources/certificates/CA_crl.pem";
 
 public:

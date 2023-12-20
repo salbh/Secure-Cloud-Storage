@@ -7,7 +7,6 @@
 #include <cstring>
 #include <openssl/rand.h>
 
-#define MESSAGE_CODE_PACKET_SIZE 71 * sizeof(uint8_t) //to move in a config file and check the correct size
 
 using namespace std;
 

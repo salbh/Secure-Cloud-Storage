@@ -3,6 +3,7 @@
 #include <openssl/rand.h>
 
 #include "SimpleMessage.h"
+#include "Config.h"
 
 
 
@@ -24,7 +25,7 @@ SimpleMessage::SimpleMessage(int message_code) {
 uint8_t* SimpleMessage::serializeSimpleMessage() {
 
     // Allocate memory for the message buffer using the size defined by MESSAGE_CODE_PACKET_SIZE
-    uint8_t* message_buffer = new uint8_t[MESSAGE_CODE_PACKET_SIZE];
+    uint8_t* message_buffer = new uint8_t[Config::MESSAGE_CODE_PACKET_SIZE];
 
     // Initialize position variable to keep track of the current position in the buffer
     size_t current_buffer_position = 0;
@@ -38,7 +39,7 @@ uint8_t* SimpleMessage::serializeSimpleMessage() {
      * to infer information about the content of the message.
      * The number of random bytes added is calculated as MESSAGE_CODE_PACKET_SIZE - position.
      */
-    RAND_bytes(message_buffer + current_buffer_position, MESSAGE_CODE_PACKET_SIZE - current_buffer_position);
+    RAND_bytes(message_buffer + current_buffer_position, Config::MESSAGE_CODE_PACKET_SIZE - current_buffer_position);
 
     // Return the serialized buffer
     return message_buffer;
