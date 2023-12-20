@@ -88,7 +88,7 @@ int SocketManager::send(uint8_t* message_buffer, int message_buffer_size) {
 }
 
 int SocketManager::receive(uint8_t* message_buffer, int message_buffer_size) {
-    int result = ::recv(m_socket, message_buffer, message_buffer_size, MSG_WAITALL);
+    long result = recv(m_socket, message_buffer, message_buffer_size, MSG_WAITALL);
     if (result == 0) {
         cerr << "SocketManager - Error: connection closed!" << endl;
         return -1;
