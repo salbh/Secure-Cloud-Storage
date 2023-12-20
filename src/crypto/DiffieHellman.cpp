@@ -12,6 +12,15 @@ DiffieHellman::DiffieHellman() {
     loadDHParameters(dh_structure);
 }
 
+DiffieHellman::~DiffieHellman() {
+    EVP_PKEY_free(m_dh_parameters);
+}
+
+// Get method only for testing purposes
+EVP_PKEY *DiffieHellman::getDhParameters() const {
+    return m_dh_parameters;
+}
+
 // Create a new low-level DH structure and sets its parameters using predefined values
 DH * DiffieHellman::generateLowLevelStructure() {
         // Static DH parameters (p and g values)
@@ -224,4 +233,3 @@ int DiffieHellman::deriveSharedSecret(EVP_PKEY* own_ephemeral_key, EVP_PKEY* pee
     EVP_PKEY_CTX_free(derive_ctx);
     return 0;
 }
-

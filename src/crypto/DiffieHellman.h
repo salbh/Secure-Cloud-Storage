@@ -1,6 +1,10 @@
 #ifndef SECURE_CLOUD_STORAGE_DIFFIEHELLMAN_H
 #define SECURE_CLOUD_STORAGE_DIFFIEHELLMAN_H
 
+#include <openssl/dh.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <cstdint>
 
 #include <cstdint>
 
@@ -10,6 +14,8 @@ class DiffieHellman {
 
 public:
     DiffieHellman();
+    ~DiffieHellman();
+    EVP_PKEY *getDhParameters() const;
     DH * generateLowLevelStructure();
     void loadDHParameters(DH *pSt);
     EVP_PKEY * generateEphemeralKey();
