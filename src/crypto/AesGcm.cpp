@@ -5,7 +5,7 @@
 using namespace std;
 
 /**
- * @brief Constructor for AesGcm class
+ * Constructor for AesGcm class
  * @param key The encryption key
  */
 AesGcm::AesGcm(const unsigned char* key) {
@@ -89,10 +89,7 @@ int AesGcm::encrypt(unsigned char* plaintext, int plaintext_len, unsigned char* 
         return handleErrorEncrypt("EVP_CIPHER_CTX_ctrl for tag failed");
     }
     ciphertext = m_ciphertext;
-
     EVP_CIPHER_CTX_free(m_ctx);
-    delete[] m_iv;
-    delete[] m_ciphertext;
 
     return ciphertext_len;
 }
@@ -148,7 +145,6 @@ int AesGcm::decrypt(unsigned char* ciphertext, int ciphertext_len, unsigned char
 
     plaintext = m_plaintext;
     EVP_CIPHER_CTX_free(m_ctx);
-    delete[] m_plaintext;
 
     if (ret > 0) {
         // Success
@@ -156,6 +152,7 @@ int AesGcm::decrypt(unsigned char* ciphertext, int ciphertext_len, unsigned char
         return plaintext_len;
     } else {
         // Verify failed
+        cerr << "AesGCM - Error during decryption: EVP_DecryptFinal_ex failed" << endl;
         return -1;
     }
 }
@@ -185,6 +182,16 @@ int AesGcm::handleErrorDecrypt(const char* msg) {
     return -1;
 }
 
+/**
+ * Get function for the IV
+ */
 unsigned char *AesGcm::getIV() {
     return m_iv;
+}
+
+/**
+ * Get function for the IV length
+ */
+int AesGcm::getIVLen() const {
+    return m_iv_len;
 }

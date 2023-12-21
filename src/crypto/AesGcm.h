@@ -36,8 +36,7 @@ public:
     static constexpr unsigned int AES_TAG_LEN = 16;
 
     unsigned char *getIV();
-
-
+    int getIVLen() const;
 };
 
 #endif //SECURE_CLOUD_STORAGE_AESGCM_H
