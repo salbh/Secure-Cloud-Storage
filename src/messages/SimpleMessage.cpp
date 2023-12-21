@@ -57,12 +57,8 @@ SimpleMessage SimpleMessage::deserializeSimpleMessage(uint8_t* message_buffer) {
     // Create a Simple Message object to store the deserialized data
     SimpleMessage message;
 
-    // Initialize position variable to keep track of the current position in the buffer
-    size_t message_position = 0;
-
     // Copy the message code from the buffer to message.m_message_code and update the position
     memcpy(&message.m_message_code, message_buffer, sizeof(uint8_t));
-    message_position += sizeof(uint8_t);
 
     // Return the constructed Simple Message object with deserialized data
     return message;
