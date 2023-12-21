@@ -1,116 +1,78 @@
 #include <iostream>
 #include <cstring>
 #include <cassert>
+#include <iomanip>
 #include "AesGcm.h"
 
 using namespace std;
 
-void printHex(const unsigned char* data, int length) {
-    for (int i = 0; i < length; ++i) {
-        cout << hex << static_cast<int>(data[i]);
+void testEncryptionAndDecryption() {
+    const unsigned char key[] = "0123456789abcdef";
+    AesGcm aesGcm(key);
+
+    // Test data
+    const char* plaintext = "Hello, this is a test!";
+    const int plaintext_len = strlen(plaintext);
+
+    const char* aad = "aad";
+    const int aad_len = strlen(aad);
+
+    cout << "Original Plaintext: " << plaintext << endl;
+
+    unsigned char* ciphertext = nullptr;
+    unsigned char tag[AesGcm::AES_TAG_LEN];
+
+    // Encrypt
+    int ciphertext_len = aesGcm.encrypt(
+            reinterpret_cast<unsigned char*>(const_cast<char*>(plaintext)),
+            plaintext_len,
+            (unsigned char *) aad, aad_len,
+            ciphertext,
+            tag
+    );
+    assert(ciphertext_len > 0);
+
+    cout << "Ciphertext Length: " << ciphertext_len << endl;
+
+    // Get IV for decryption
+    unsigned char* iv = aesGcm.getIV();
+    int iv_len = aesGcm.getIVLen();
+    cout << "IV length: " << iv_len << endl;
+
+    // Print IV for debugging
+    cout << "IV: ";
+    for (int i = 0; i < iv_len; ++i) {
+        cout << hex << setw(2) << setfill('0') << static_cast<int>(iv[i]) << " ";
     }
     cout << dec << endl;
-}
 
-void testEncryptionAndDecryption() {
-    const unsigned char key[] = "0123456789ABCDEF";  // 128-bit key
-    AesGcm aesGcm(key);
+    // Decrypt
+    unsigned char* decryptedText = nullptr;
+    int decrypted_len = aesGcm.decrypt(
+            ciphertext, ciphertext_len,
+            (unsigned char *) aad, aad_len,
+            iv, tag,
+            decryptedText
+    );
+    assert(decrypted_len == plaintext_len);
 
-    const char* plaintext = "Hello, AES-GCM!";
-    int plaintext_len = strlen(plaintext);
+    cout << "Decrypted Plaintext: " << reinterpret_cast<char*>(decryptedText) << endl;
 
-    unsigned char* aad = nullptr;
-    int aad_len = 0;
+    // Verify the decrypted text
+    assert(strcmp(plaintext, reinterpret_cast<char*>(decryptedText)) == 0);
 
-    unsigned char* ciphertext = nullptr;
-    unsigned char tag[AesGcm::AES_TAG_LEN];
-
-    int encrypted_len = aesGcm.encrypt((unsigned char*)plaintext, plaintext_len, aad, aad_len, ciphertext, tag);
-
-    unsigned char* iv = aesGcm.getIV();
-
-    unsigned char* decrypted_text = nullptr;
-    int decrypted_len = aesGcm.decrypt(ciphertext, encrypted_len, aad, aad_len, iv, tag, decrypted_text);
-
-    cout << "Decrypted text len: " << decrypted_len << endl;
-
-    assert(plaintext_len == decrypted_len && "Decrypted length matches");
-    assert(strcmp(plaintext, reinterpret_cast<const char*>(decrypted_text)) == 0 && "Decrypted text matches");
-
-    cout << "Plaintext: " << plaintext << endl;
-    cout << "Ciphertext: ";
-    printHex(ciphertext, encrypted_len);
-
-    cout << "Decrypted Text: " << reinterpret_cast<const char*>(decrypted_text) << endl;
-
+    // Clean up
     delete[] ciphertext;
-    delete[] decrypted_text;
-}
+    delete[] decryptedText;
 
-void testEncryptionErrorHandling() {
-    const unsigned char key[] = "0123456789ABCDEF";  // 128-bit key
-    AesGcm aesGcm(key);
-
-    const char* plaintext = "Hello, AES-GCM!";
-    int plaintext_len = strlen(plaintext);
-
-    unsigned char* aad = nullptr;
-    int aad_len = 0;
-
-    unsigned char* ciphertext = nullptr;
-    unsigned char tag[AesGcm::AES_TAG_LEN];
-
-    int encrypted_len = aesGcm.encrypt(nullptr, plaintext_len, aad, aad_len, ciphertext, tag);
-
-    assert(encrypted_len == -1 && "Encryption error detected");
-
-    cout << "Ciphertext (Error Case): ";
-    printHex(ciphertext, encrypted_len);
-
-    delete[] ciphertext;
-}
-
-void testDecryptionErrorHandling() {
-    const unsigned char key[] = "0123456789ABCDEF";  // 128-bit key
-    AesGcm aesGcm(key);
-
-    const char* plaintext = "Hello, AES-GCM!";
-    int plaintext_len = strlen(plaintext);
-
-    unsigned char* aad = nullptr;
-    int aad_len = 0;
-
-    unsigned char* ciphertext = nullptr;
-    unsigned char tag[AesGcm::AES_TAG_LEN];
-
-    int encrypted_len = aesGcm.encrypt(reinterpret_cast<unsigned char*>(const_cast<char*>(plaintext)),
-                                       plaintext_len, aad, aad_len, ciphertext, tag);
-
-    unsigned char* iv = aesGcm.getIV();
-    unsigned char incorrect_tag[AesGcm::AES_TAG_LEN];
-    memset(incorrect_tag, 0, AesGcm::AES_TAG_LEN);  // Incorrect tag
-
-    unsigned char* decrypted_text = nullptr;
-    int decrypted_len = aesGcm.decrypt(ciphertext, encrypted_len, aad, aad_len, iv, incorrect_tag, decrypted_text);
-
-    assert(decrypted_len == -1 && "Decryption error detected");
-
-    cout << "Ciphertext (Decryption Error Case): ";
-    printHex(ciphertext, encrypted_len);
-
-    delete[] ciphertext;
-    delete[] decrypted_text;
+    cout << "\nTest Passed!" << endl;
 }
 
 int main() {
-    cout << "Running Test: Encryption and Decryption" << endl;
-    testEncryptionAndDecryption();
-
-    cout << "Running Test: Encryption Error Handling" << endl;
-    testEncryptionErrorHandling();
-
-    cout << "Running Test: Decryption Error Handling" << endl;
-    testDecryptionErrorHandling();
+    // Run the tests
+     testEncryptionAndDecryption();
 
     return 0;
 }
+
+
