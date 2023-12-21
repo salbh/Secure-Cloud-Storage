@@ -3,6 +3,10 @@
 
 
 class Download {
+    //FRANK
+    //M1:(DOWNLOAD REQUEST, FILENAME)
+    //M2:(DOWNLOAD ACK, FILESIZE)
+    //M3+i:(DOWNLOAD RESPONSE,FILE CHUNK)
 
 };
 
