@@ -6,7 +6,7 @@
 #include <string>
 
 //M1:(LIST_REQUEST) --> is a SimpleMessage, not defined here but initialized in the Client
-//M2:(LIST_SIZE, LIST SIZE)
+//M2:(LIST_ACK, LIST SIZE)
 //M3:(LIST_RESPONSE, FILE LIST)
 
 // ListM2 class represents the second message for the list operation

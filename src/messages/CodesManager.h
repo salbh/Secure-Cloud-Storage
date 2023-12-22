@@ -20,7 +20,7 @@ enum class Message : int {
     DELETE_ASK = 8,
     DELETE_CONFIRM = 9,
     LIST_REQUEST = 10,
-    LIST_SIZE = 11,
+    LIST_ACK = 11,
     LIST_RESPONSE = 12,
     RENAME_REQUEST = 13,
     LOGOUT_REQUEST = 14
