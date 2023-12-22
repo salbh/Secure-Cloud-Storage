@@ -6,22 +6,31 @@
 
 using namespace std;
 
-// DiffieHellman class constructor
+/**
+ * @brief DiffieHellman class constructor
+ */
 DiffieHellman::DiffieHellman() {
     DH* dh_structure = generateLowLevelStructure();
     loadDHParameters(dh_structure);
 }
 
+/**
+ * @brief DiffieHellman class destructor
+ */
 DiffieHellman::~DiffieHellman() {
     EVP_PKEY_free(m_dh_parameters);
 }
 
-// Get method only for testing purposes
+/**
+ * @brief Get method only for testing purposes
+ */
 EVP_PKEY *DiffieHellman::getDhParameters() const {
     return m_dh_parameters;
 }
 
-// Create a new low-level DH structure and sets its parameters using predefined values
+/**
+ * @brief Create a new low-level DH structure and sets its parameters using predefined values
+ */
 DH * DiffieHellman::generateLowLevelStructure() {
         // Static DH parameters (p and g values)
         static unsigned char dhp_2048[] = {
@@ -79,7 +88,7 @@ DH * DiffieHellman::generateLowLevelStructure() {
 }
 
 /**
- * Copy the generated standard parameters into an EVP_PKEY structure
+ * @brief Copy the generated standard parameters into an EVP_PKEY structure
  * @param dh_structure DH structure containing the parameters to be copied
  */
 void DiffieHellman::loadDHParameters(DH *dh_structure) {
@@ -96,7 +105,9 @@ void DiffieHellman::loadDHParameters(DH *dh_structure) {
     DH_free(dh_structure);
 }
 
-// Generates an ephemeral key pair for Diffie-Hellman key exchange
+/**
+ * @brief Generates an ephemeral key pair for Diffie-Hellman key exchange
+ */
 EVP_PKEY * DiffieHellman::generateEphemeralKey() {
     // Create context for the key generation
     EVP_PKEY_CTX *dh_context;
@@ -117,7 +128,7 @@ EVP_PKEY * DiffieHellman::generateEphemeralKey() {
 }
 
 /**
- * Serializes the provided ephemeral key into PEM format.
+ * @brief Serializes the provided ephemeral key into PEM format.
  * @param ephemeral_key The ephemeral key to be serialized (EVP_PKEY structure)
  * @param serialized_ephemeral_key The pointer to the buffer that will store the serialized key
  * @param serialized_ephemeral_key_size The integer reference that will store the size of the serialized key
@@ -162,8 +173,7 @@ int DiffieHellman::serializeEphemeralKey(EVP_PKEY* ephemeral_key, uint8_t*& seri
 }
 
 /**
- * Deserialize the ephemeral key from a serialized buffer
- *
+ * @brief Deserialize the ephemeral key from a serialized buffer
  * @param serialized_ephemeral_key       The buffer containing the serialized key data
  * @param serialized_ephemeral_key_size  The size of the serialized ephemeral key buffer
  * @return The deserialized ephemeral key (EVP_PKEY*), or nullptr on failure
@@ -194,8 +204,7 @@ EVP_PKEY* DiffieHellman::deserializeEphemeralKey(uint8_t* serialized_ephemeral_k
 }
 
 /**
- * Derives a shared secret from the given own ephemeral key and the peer's ephemeral key.
- *
+ * @brief Derives a shared secret from the given own ephemeral key and the peer's ephemeral key.
  * @param own_ephemeral_key     The local ephemeral key for the Diffie-Hellman key exchange.
  * @param peer_ephemeral_key    The peer's ephemeral key received during the key exchange.
  * @param shared_secret         Output parameter to store the derived shared secret.
