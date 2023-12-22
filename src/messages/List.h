@@ -9,7 +9,7 @@
 //M2:(LIST_SIZE, LIST SIZE)
 //M3:(LIST_RESPONSE, FILE LIST)
 
-// ListM2 class represents the second message for list request
+// ListM2 class represents the second message for the list operation
 class ListM2 {
 public:
     ListM2();
@@ -24,7 +24,7 @@ private:
     uint32_t m_list_size{};
 };
 
-// ListM3 class represents the third message for list response
+// ListM3 class represents the third message for the list operation
 class ListM3 {
 
 public:
