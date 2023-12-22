@@ -6,9 +6,9 @@
 #include <openssl/pem.h>
 #include <cstdint>
 
-#include <cstdint>
-
 class DiffieHellman {
+
+private:
     // Diffie-Hellman parameters
     EVP_PKEY *m_dh_parameters;
 
