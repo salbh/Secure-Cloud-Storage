@@ -13,12 +13,14 @@ public:
     Delete();
     Delete(const string& file_name);
 
-    uint8_t *serializeDeleteMessage();
-    Delete deserializeDeleteMessage(uint8_t *buffer);
+    uint8_t* serialize();
+    Delete deserialize(uint8_t* buffer);
+
+    size_t getSize() const;
 
 private:
-    uint8_t m_message_code;
-    char m_file_name[Config::FILE_NAME_LEN];
+    uint8_t m_message_code{};
+    char m_file_name[Config::FILE_NAME_LEN]{};
 };
 
 
