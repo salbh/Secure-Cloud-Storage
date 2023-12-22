@@ -18,8 +18,6 @@ private:
     unsigned char* m_plaintext;
     unsigned char* m_iv;
 
-    // 128-bit tag for AES-GCM
-
 public:
     AesGcm(const unsigned char* key);
     ~AesGcm();

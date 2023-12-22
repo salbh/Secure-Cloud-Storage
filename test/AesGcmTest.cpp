@@ -14,25 +14,26 @@ void testEncryptionAndDecryption() {
     const char* plaintext = "Hello, this is a test!";
     const int plaintext_len = strlen(plaintext);
 
-    const char* aad = "aad";
+    const char* aad = "12";
     const int aad_len = strlen(aad);
 
-    cout << "Original Plaintext: " << plaintext << endl;
+    cout << "Original plaintext: " << plaintext << endl;
+    cout << "Plaintext length: " << plaintext_len << endl;
 
     unsigned char* ciphertext = nullptr;
     unsigned char tag[AesGcm::AES_TAG_LEN];
 
     // Encrypt
     int ciphertext_len = aesGcm.encrypt(
-            reinterpret_cast<unsigned char*>(const_cast<char*>(plaintext)),
+            (unsigned char*)plaintext,
             plaintext_len,
-            (unsigned char *) aad, aad_len,
+            (unsigned char*)aad, aad_len,
             ciphertext,
             tag
     );
     assert(ciphertext_len > 0);
 
-    cout << "Ciphertext Length: " << ciphertext_len << endl;
+    cout << "\nCiphertext length: " << ciphertext_len << endl;
 
     // Get IV for decryption
     unsigned char* iv = aesGcm.getIV();
@@ -56,7 +57,8 @@ void testEncryptionAndDecryption() {
     );
     assert(decrypted_len == plaintext_len);
 
-    cout << "Decrypted Plaintext: " << reinterpret_cast<char*>(decryptedText) << endl;
+    cout << "\nDecrypted plaintext: " << reinterpret_cast<char*>(decryptedText) << endl;
+    cout << "Decrypted plaintext length: " << decrypted_len << endl;
 
     // Verify the decrypted text
     assert(strcmp(plaintext, reinterpret_cast<char*>(decryptedText)) == 0);
