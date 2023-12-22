@@ -35,7 +35,7 @@ public:
     ListM3 deserialize(uint8_t* buffer, int buffer_len);
     size_t getSize() const;
 
-    virtual ~ListM3();
+    ~ListM3();
 
 private:
     uint8_t m_message_code{};
