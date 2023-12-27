@@ -12,8 +12,10 @@ using namespace std;
 
 
 class SimpleMessage {
+private:
     uint8_t m_message_code;
 
+public:
     SimpleMessage();
     SimpleMessage(int message_code);
 

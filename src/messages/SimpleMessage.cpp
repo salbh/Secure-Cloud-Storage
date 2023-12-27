@@ -48,7 +48,7 @@ uint8_t* SimpleMessage::serializeSimpleMessage() {
 
 //
 /**
- * Static function to deserialize data from a message buffer and construct a Simple Message object
+ * Function to deserialize data from a message buffer and construct a Simple Message object
  * @param message_buffer the serialized buffer with the message
  * @return Return the constructed Simple Message object with deserialized data
  */

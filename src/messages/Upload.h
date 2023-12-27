@@ -18,26 +18,28 @@
 
 
 class UploadM1 {
+
+private:
     uint8_t m_message_code;
-    char* m_filename[Config::FILE_NAME_LEN];
-    uint32_t m_filesize;
+    char m_filename[Config::FILE_NAME_LEN];
+    uint32_t m_file_size;
 
 public:
     UploadM1();
-    UploadM1(std::string file_name, size_t file_size);
-    ~UploadM1();
+    UploadM1(std::string& file_name, size_t file_size);
 
     uint8_t* serializeUploadM1();
     UploadM1 deserializeUploadM1(uint8_t* upload_message_buffer);
 
-
 };
 
 
+
 class UploadMi {
+private:
     uint8_t m_message_code;
     uint8_t* m_chunk;
-    int chunk_size;
+    int m_chunk_size;
 
 public:
     UploadMi();
@@ -46,7 +48,7 @@ public:
 
     uint8_t* serializeUploadMi();
     UploadMi deserializeUploadMi(uint8_t* upload_message_buffer, int chunk_size);
-    int getSizeUploadMi(int chunk_size);
+    size_t getSizeUploadMi(int chunk_size);
 
 };
 
