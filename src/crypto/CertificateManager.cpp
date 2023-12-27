@@ -148,7 +148,6 @@ EVP_PKEY *CertificateManager::getPublicKey(X509 *certificate) {
 }
 
 
-//
 /**
  * Function to serializeLogoutMessage a certificate (when has to be sent)
  * @param certificate_to_serialize certificate to be serialized
