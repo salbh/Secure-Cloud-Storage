@@ -9,6 +9,7 @@ using namespace std;
 
 
 class CertificateManager {
+private:
     X509_STORE* m_certificate_store;
     static CertificateManager* m_certificate_manager_instance;
 
@@ -34,9 +35,6 @@ public:
         }
         return m_certificate_manager_instance;
     }
-
-
-private:
 
 };
 

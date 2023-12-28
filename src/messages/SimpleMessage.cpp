@@ -6,8 +6,11 @@
 #include "Config.h"
 
 
+/**
+ * Default constructor of SimpleMessage class
+ */
+SimpleMessage::SimpleMessage() = default;
 
-SimpleMessage::SimpleMessage() {}
 
 /**
  * Simple Message object constructor
@@ -17,7 +20,7 @@ SimpleMessage::SimpleMessage(int message_code) {
     m_message_code = static_cast<uint8_t>(message_code);
 }
 
-//
+
 /**
  * Function to serialize data into a byte buffer
  * @return the serialized buffer with the message
@@ -46,9 +49,8 @@ uint8_t* SimpleMessage::serializeSimpleMessage() {
 }
 
 
-//
 /**
- * Static function to deserialize data from a message buffer and construct a Simple Message object
+ * Function to deserialize data from a message buffer and construct a Simple Message object
  * @param message_buffer the serialized buffer with the message
  * @return Return the constructed Simple Message object with deserialized data
  */
@@ -63,4 +65,3 @@ SimpleMessage SimpleMessage::deserializeSimpleMessage(uint8_t* message_buffer) {
     // Return the constructed Simple Message object with deserialized data
     return message;
 }
-
