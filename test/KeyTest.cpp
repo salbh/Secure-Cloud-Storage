@@ -17,7 +17,6 @@ int main() {
     EVP_PKEY* long_term_key;
     string password;
 
-
     //List of certificate names
     std::vector<std::string> encrypted_keys_name_list = {"Francesco", "Luca", "Salvatore"};
 
