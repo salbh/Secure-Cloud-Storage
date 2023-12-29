@@ -25,7 +25,7 @@ int main() {
         cout << "**Test password on encrypted key for " << name << "**" << endl;
 
         // Construct the encrypted private key filename
-        string private_key_file = "../resources/encrpyted_private_keys/" + name + "_key.pem";
+        string private_key_file = "../resources/encrypted_private_keys/" + name + "_key.pem";
 
         // Prompt user to enter a password for the current key
         cout << "Insert password for " << name << " : ";
@@ -48,6 +48,8 @@ int main() {
             cerr << "KeyTest - Wrong password" << endl;
             return -1;
         }
+
+        cout << "**Successful Authentication for " << name << " Encrypted Private Key**\n" << endl;
     }
 
     cout << "+TEST PASSED+" << endl;
