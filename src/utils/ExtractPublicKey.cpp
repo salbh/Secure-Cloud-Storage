@@ -10,7 +10,7 @@
 using namespace std;
 
 /**
- * Program to generate users public keys extracted from the users certificates
+ * Program to generate and save users public keys extracted from the users certificates
  */
 int main() {
 
@@ -30,12 +30,14 @@ int main() {
         // Convert to const char*
         const char* certificate_filename = certificate_filename_string.c_str();
 
+        // Create the certificate manager instance (if exists use the allocated instance)
+        CertificateManager* certificate_manager = CertificateManager::getInstance();
+
         // Load the current certificate
-        CertificateManager* certificate_store = CertificateManager::getInstance();
-        X509* certificate = certificate_store->loadCertificate(certificate_filename);
+        X509* certificate = certificate_manager->loadCertificate(certificate_filename);
 
         // Extract the public key from the certificate
-        EVP_PKEY* public_key = certificate_store->getPublicKey(certificate);
+        EVP_PKEY* public_key = certificate_manager->getPublicKey(certificate);
         cout << "**Public key Extracted successfully**" << endl;
 
         // Save the public key in a file
