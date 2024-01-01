@@ -97,7 +97,7 @@ bool FileManager::isFilePresent(const string &file_path) {
 }
 
 /**
- * Check if a string is valid based on certain criteria (e.g., for filenames)
+ * Check if a string is valid based on certain criteria
  * @param input_string The string to be validated
  * @return True if the string is valid, false otherwise
  */
@@ -106,6 +106,7 @@ bool FileManager::isStringValid(const string &input_string) {
     if (strspn(input_string.c_str(), whitelist) < input_string.length()) {
         cerr << "FileManager - Error! Characters not allowed" << endl;
         cout << "Allowed characters are: ";
+        // Print each character in the whitelist
         for (const char *ptr = whitelist; *ptr; ptr++) {
             cout << *ptr;
         }
@@ -142,7 +143,10 @@ void FileManager::openFile(const string &file_path) {
             if (!m_in_file.is_open()) {
                 throw runtime_error("Failed to open file for reading");
             }
+            // In read mode the member variables related to file info are initialized
+            // using the file size to compute them
             initFileInfo(computeFileSize(m_in_file));
+
         } else if (m_open_mode == OpenMode::WRITE) {
             if (isFilePresent(file_path)) {
                 throw runtime_error("File already exists");
@@ -173,7 +177,7 @@ streamsize FileManager::computeFileSize(ifstream &in_file) {
 }
 
 /**
- * Initialize file information (size, chunks, last chunk size)
+ * Initialize file information (size, number of chunks, last chunk size)
  * @param file_size The size of the file in bytes
  */
 void FileManager::initFileInfo(streamsize file_size) {
