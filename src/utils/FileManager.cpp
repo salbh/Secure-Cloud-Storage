@@ -7,12 +7,21 @@
 using std::cerr, std::cout, std::endl, std::ifstream, std::ofstream,
         std::ios, std::runtime_error, std::streampos, std::streamsize, std::ceil, std::exception;
 
+/**
+ * Constructor for the FileManager class
+ * @param file_path The path to the file
+ * @param open_mode The mode in which the file should be opened (READ or WRITE)
+ */
 FileManager::FileManager(const string &file_path, OpenMode open_mode)
         : m_open_mode(open_mode), m_in_file(), m_out_file(),
           m_file_size(0), m_chunks_num(0), m_last_chunk_size(0) {
     openFile(file_path);
 }
 
+/**
+ * Destructor for the FileManager class
+ * Closes the file if it was opened for reading or writing
+ */
 FileManager::~FileManager() {
     if (m_open_mode == OpenMode::READ) {
         m_in_file.close();
@@ -21,18 +30,36 @@ FileManager::~FileManager() {
     }
 }
 
+/**
+ * Get the size of the file
+ * @return The size of the file in bytes
+ */
 streamsize FileManager::getFileSize() const {
     return m_file_size;
 }
 
+/**
+ * Get the number of chunks the file is divided into
+ * @return The number of chunks
+ */
 streamsize FileManager::getChunksNum() const {
     return m_chunks_num;
 }
 
+/**
+ * Get the size of the last chunk of the file
+ * @return The size of the last chunk in bytes
+ */
 streamsize FileManager::getLastChunkSize() const {
     return m_last_chunk_size;
 }
 
+/**
+ * Read a chunk of data from the file
+ * @param buffer The buffer to store the read data
+ * @param size The size of the buffer
+ * @return 0 on success, -1 on failure
+ */
 int FileManager::readChunk(char *buffer, streamsize size) {
     if (m_open_mode == READ) {
         m_in_file.read(buffer, size);
@@ -43,6 +70,12 @@ int FileManager::readChunk(char *buffer, streamsize size) {
     return 0;
 }
 
+/**
+ * Write a chunk of data to the file
+ * @param buffer The buffer containing the data to be written
+ * @param size The size of the data to be written
+ * @return 0 on success, -1 on failure
+ */
 int FileManager::writeChunk(const char *buffer, streamsize size) {
     if (m_open_mode == WRITE) {
         m_out_file.write(buffer, size);
@@ -53,11 +86,21 @@ int FileManager::writeChunk(const char *buffer, streamsize size) {
     return 0;
 }
 
+/**
+ * Check if a file is present at the specified path
+ * @param file_path The path to the file
+ * @return True if the file is present, false otherwise
+ */
 bool FileManager::isFilePresent(const string &file_path) {
     ifstream in_data(file_path, ios::binary);
     return in_data.is_open();
 }
 
+/**
+ * Check if a string is valid based on certain criteria (e.g., for filenames)
+ * @param input_string The string to be validated
+ * @return True if the string is valid, false otherwise
+ */
 bool FileManager::isStringValid(const string &input_string) {
     const char whitelist[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_-.@";
     if (strspn(input_string.c_str(), whitelist) < input_string.length()) {
@@ -88,6 +131,10 @@ bool FileManager::isStringValid(const string &input_string) {
     return true;
 }
 
+/**
+ * Open a file in the specified mode and handle exceptions
+ * @param file_path The path to the file
+ */
 void FileManager::openFile(const string &file_path) {
     try {
         if (m_open_mode == OpenMode::READ) {
@@ -110,6 +157,11 @@ void FileManager::openFile(const string &file_path) {
     }
 }
 
+/**
+ * Compute the size of the file
+ * @param in_file The input file stream
+ * @return The size of the file in bytes
+ */
 streamsize FileManager::computeFileSize(ifstream &in_file) {
     streampos begin = in_file.tellg();
     in_file.seekg(0, ios::end);
@@ -120,6 +172,10 @@ streamsize FileManager::computeFileSize(ifstream &in_file) {
     return end - begin;
 }
 
+/**
+ * Initialize file information (size, chunks, last chunk size)
+ * @param file_size The size of the file in bytes
+ */
 void FileManager::initFileInfo(streamsize file_size) {
     m_file_size = file_size;
     m_chunks_num = ceil((double) m_file_size / (double) Config::CHUNK_SIZE);
@@ -129,7 +185,3 @@ void FileManager::initFileInfo(streamsize file_size) {
         m_last_chunk_size = Config::CHUNK_SIZE;
     }
 }
-
-
-
-
