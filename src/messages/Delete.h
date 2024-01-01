@@ -9,6 +9,10 @@ using namespace std;
 
 class Delete {
 
+private:
+    uint8_t m_message_code{};
+    char m_file_name[Config::FILE_NAME_LEN]{};
+
 public:
     Delete();
     Delete(const string& file_name);
@@ -18,9 +22,6 @@ public:
 
     size_t getSize() const;
 
-private:
-    uint8_t m_message_code{};
-    char m_file_name[Config::FILE_NAME_LEN]{};
 };
 
 

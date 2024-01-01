@@ -11,6 +11,11 @@
 
 // ListM2 class represents the second message for the list operation
 class ListM2 {
+
+private:
+    uint8_t m_message_code{};
+    uint32_t m_list_size{};
+
 public:
     ListM2();
     ListM2(uint32_t listSize);
@@ -18,14 +23,15 @@ public:
     uint8_t* serialize();
     ListM2 deserialize(uint8_t* buffer);
     size_t getSize() const;
-
-private:
-    uint8_t m_message_code{};
-    uint32_t m_list_size{};
 };
 
 // ListM3 class represents the third message for the list operation
 class ListM3 {
+
+private:
+    uint8_t m_message_code{};
+    uint32_t m_list_size{};
+    uint8_t* m_file_list{};
 
 public:
     ListM3();
@@ -37,10 +43,6 @@ public:
 
     ~ListM3();
 
-private:
-    uint8_t m_message_code{};
-    uint32_t m_list_size{};
-    uint8_t* m_file_list{};
 };
 
 #endif //SECURE_CLOUD_STORAGE_LIST_H
