@@ -15,10 +15,12 @@ private:
 
 public:
     Delete();
-    Delete(const string& file_name);
 
-    uint8_t* serialize();
-    Delete deserialize(uint8_t* buffer);
+    Delete(const string &file_name);
+
+    uint8_t *serialize();
+
+    Delete deserialize(uint8_t *buffer);
 
     size_t getSize() const;
 

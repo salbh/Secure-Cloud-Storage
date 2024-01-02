@@ -18,10 +18,13 @@ private:
 
 public:
     ListM2();
+
     ListM2(uint32_t listSize);
 
-    uint8_t* serialize();
-    ListM2 deserialize(uint8_t* buffer);
+    uint8_t *serialize();
+
+    ListM2 deserialize(uint8_t *buffer);
+
     size_t getSize() const;
 };
 
@@ -31,14 +34,17 @@ class ListM3 {
 private:
     uint8_t m_message_code{};
     uint32_t m_list_size{};
-    uint8_t* m_file_list{};
+    uint8_t *m_file_list{};
 
 public:
     ListM3();
-    ListM3(uint32_t list_size, uint8_t* file_list);
 
-    uint8_t* serialize();
-    ListM3 deserialize(uint8_t* buffer, int buffer_len);
+    ListM3(uint32_t list_size, uint8_t *file_list);
+
+    uint8_t *serialize();
+
+    ListM3 deserialize(uint8_t *buffer, int buffer_len);
+
     size_t getSize() const;
 
     ~ListM3();

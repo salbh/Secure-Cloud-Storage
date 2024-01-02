@@ -5,7 +5,10 @@
 #include <fstream>
 #include <string>
 
-using std::string, std::ifstream, std::ofstream, std::streamsize;
+using std::string;
+using std::ifstream;
+using std::ofstream;
+using std::streamsize;
 
 class FileManager {
 

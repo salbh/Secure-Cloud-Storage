@@ -4,8 +4,7 @@
 #include <stdexcept>
 #include <cstring>
 
-using std::cerr, std::cout, std::endl, std::ifstream, std::ofstream,
-        std::ios, std::runtime_error, std::streampos, std::streamsize, std::ceil, std::exception;
+using namespace std;
 
 /**
  * Constructor for the FileManager class
@@ -103,6 +102,7 @@ bool FileManager::isFilePresent(const string &file_path) {
  */
 bool FileManager::isStringValid(const string &input_string) {
     const char whitelist[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_-.@";
+    // Check if input string is composed only by characters in the whitelist
     if (strspn(input_string.c_str(), whitelist) < input_string.length()) {
         cerr << "FileManager - Error! Characters not allowed" << endl;
         cout << "Allowed characters are: ";
@@ -113,18 +113,15 @@ bool FileManager::isStringValid(const string &input_string) {
         cout << endl;
         return false;
     }
-
     if (input_string.empty()) {
         cerr << "FileManager - Error! Filename cannot be empty" << endl;
         return false;
     }
-
     if (input_string.length() > Config::FILE_NAME_LEN) {
         cerr << "FileManager - Error! The string is too long. Maximum allowed length is "
              << Config::FILE_NAME_LEN << " characters" << endl;
         return false;
     }
-
     if (input_string == "." || input_string == "..") {
         cerr << "FileManager - Error! Invalid string. Reserved names not allowed" << endl;
         return false;
