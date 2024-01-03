@@ -21,19 +21,25 @@ public:
 
     ~FileManager();
 
-    int readChunk(char *buffer, streamsize size);
-
-    int writeChunk(const char *buffer, streamsize size);
-
-    static bool isFilePresent(const string &file_path);
-
-    static bool isStringValid(const string &input_string);
-
     streamsize getFileSize() const;
 
     streamsize getChunksNum() const;
 
     streamsize getLastChunkSize() const;
+
+    void closeFile();
+
+    int readChunk(char *buffer, streamsize size);
+
+    int writeChunk(const char *buffer, streamsize size);
+
+    void initFileInfo(streamsize file_size);
+
+    static streamsize computeFileSize(const string& file_path);
+
+    static bool isFilePresent(const string &file_path);
+
+    static bool isStringValid(const string &input_string);
 
 private:
     OpenMode m_open_mode;
@@ -45,10 +51,6 @@ private:
     streamsize m_last_chunk_size;
 
     void openFile(const string &file_path);
-
-    static streamsize computeFileSize(ifstream &in_file);
-
-    void initFileInfo(streamsize file_size);
 };
 
 #endif // FILE_MANAGER_H

@@ -22,10 +22,78 @@ FileManager::FileManager(const string &file_path, OpenMode open_mode)
  * Closes the file if it was opened for reading or writing
  */
 FileManager::~FileManager() {
+    closeFile();
+}
+
+/**
+ * Close the file depending on the specified mode
+ */
+void FileManager::closeFile() {
     if (m_open_mode == OpenMode::READ) {
         m_in_file.close();
     } else if (m_open_mode == OpenMode::WRITE) {
         m_out_file.close();
+    }
+}
+
+/**
+ * Open a file in the specified mode and handle exceptions
+ * @param file_path The path to the file
+ */
+void FileManager::openFile(const string &file_path) {
+    try {
+        // Open file in read mode
+        if (m_open_mode == OpenMode::READ) {
+            m_in_file.open(file_path, ios::binary);
+            if (!m_in_file.is_open()) {
+                throw runtime_error("Failed to open file for reading");
+            }
+            // In read mode the member variables related to file info are initialized
+            // using the file size to compute them
+            initFileInfo(computeFileSize(file_path));
+
+            // Open file in write mode
+        } else if (m_open_mode == OpenMode::WRITE) {
+            if (isFilePresent(file_path)) {
+                throw runtime_error("File already exists");
+            }
+            m_out_file.open(file_path, ios::binary);
+            if (!m_out_file.is_open()) {
+                throw runtime_error("Failed to open file for writing");
+            }
+        }
+    } catch (const exception &e) {
+        cerr << "FileManager - Error! " << e.what() << endl;
+    }
+}
+
+/**
+ * Compute the size of the file
+ * @param in_file The input file stream
+ * @return The size of the file in bytes
+ */
+streamsize FileManager::computeFileSize(const string& file_path) {
+    ifstream in_file(file_path, ios::binary);
+    streampos begin = in_file.tellg();
+    in_file.seekg(0, ios::end);
+    streampos end = in_file.tellg();
+    if (end < begin) {
+        throw runtime_error("Failed to determine file size");
+    }
+    return end - begin;
+}
+
+/**
+ * Initialize file information (size, number of chunks, last chunk size)
+ * @param file_size The size of the file in bytes
+ */
+void FileManager::initFileInfo(streamsize file_size) {
+    m_file_size = file_size;
+    m_chunks_num = ceil((double) m_file_size / (double) Config::CHUNK_SIZE);
+    if (m_file_size % Config::CHUNK_SIZE != 0) {
+        m_last_chunk_size = m_file_size % Config::CHUNK_SIZE;
+    } else {
+        m_last_chunk_size = Config::CHUNK_SIZE;
     }
 }
 
@@ -104,7 +172,7 @@ bool FileManager::isStringValid(const string &input_string) {
     const char whitelist[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_-.@";
     // Check if input string is composed only by characters in the whitelist
     if (strspn(input_string.c_str(), whitelist) < input_string.length()) {
-        cerr << "FileManager - Error! Characters not allowed" << endl;
+        cout << "FileManager - Error! Characters not allowed" << endl;
         cout << "Allowed characters are: ";
         // Print each character in the whitelist
         for (const char *ptr = whitelist; *ptr; ptr++) {
@@ -114,75 +182,21 @@ bool FileManager::isStringValid(const string &input_string) {
         return false;
     }
     if (input_string.empty()) {
-        cerr << "FileManager - Error! Filename cannot be empty" << endl;
+        cout << "FileManager - Error! The string cannot be empty" << endl;
         return false;
     }
     if (input_string.length() > Config::FILE_NAME_LEN) {
-        cerr << "FileManager - Error! The string is too long. Maximum allowed length is "
-             << Config::FILE_NAME_LEN << " characters" << endl;
+        cout << "FileManager - Error! The string is too long. Maximum allowed length is "
+             << (int) Config::FILE_NAME_LEN << " characters" << endl;
         return false;
     }
     if (input_string == "." || input_string == "..") {
-        cerr << "FileManager - Error! Invalid string. Reserved names not allowed" << endl;
+        cout << "FileManager - Error! Invalid string. Reserved names not allowed" << endl;
         return false;
     }
     return true;
 }
 
-/**
- * Open a file in the specified mode and handle exceptions
- * @param file_path The path to the file
- */
-void FileManager::openFile(const string &file_path) {
-    try {
-        if (m_open_mode == OpenMode::READ) {
-            m_in_file.open(file_path, ios::binary);
-            if (!m_in_file.is_open()) {
-                throw runtime_error("Failed to open file for reading");
-            }
-            // In read mode the member variables related to file info are initialized
-            // using the file size to compute them
-            initFileInfo(computeFileSize(m_in_file));
 
-        } else if (m_open_mode == OpenMode::WRITE) {
-            if (isFilePresent(file_path)) {
-                throw runtime_error("File already exists");
-            }
-            m_out_file.open(file_path, ios::binary);
-            if (!m_out_file.is_open()) {
-                throw runtime_error("Failed to open file for writing");
-            }
-        }
-    } catch (const exception &e) {
-        cerr << "FileManager - Error! " << e.what() << endl;
-    }
-}
 
-/**
- * Compute the size of the file
- * @param in_file The input file stream
- * @return The size of the file in bytes
- */
-streamsize FileManager::computeFileSize(ifstream &in_file) {
-    streampos begin = in_file.tellg();
-    in_file.seekg(0, ios::end);
-    streampos end = in_file.tellg();
-    if (end < begin) {
-        throw runtime_error("Failed to determine file size");
-    }
-    return end - begin;
-}
 
-/**
- * Initialize file information (size, number of chunks, last chunk size)
- * @param file_size The size of the file in bytes
- */
-void FileManager::initFileInfo(streamsize file_size) {
-    m_file_size = file_size;
-    m_chunks_num = ceil((double) m_file_size / (double) Config::CHUNK_SIZE);
-    if (m_file_size % Config::CHUNK_SIZE != 0) {
-        m_last_chunk_size = m_file_size % Config::CHUNK_SIZE;
-    } else {
-        m_last_chunk_size = Config::CHUNK_SIZE;
-    }
-}

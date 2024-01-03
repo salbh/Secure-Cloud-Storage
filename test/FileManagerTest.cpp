@@ -3,30 +3,37 @@
 #include <cassert>
 #include <iostream>
 #include <cstring>
+#include "Config.h"
 
 using namespace std;
 
-void testFileManager() {
+void testReadAndWrite() {
     const char plaintext[] = "Hello, World!";
-    auto len = static_cast<streamsize>(strlen(plaintext));
+    auto plaintext_len = static_cast<streamsize>(strlen(plaintext));
+    string file_path = "test_1.txt";
 
+    // Write to file
     cout << "Writing on test_1.txt file" << endl;
-    FileManager fm_write("test_1.txt", FileManager::OpenMode::WRITE);
-    fm_write.writeChunk(plaintext, len);
+    FileManager fm_write(file_path, FileManager::OpenMode::WRITE);
+    int res = fm_write.writeChunk(plaintext, plaintext_len);
+    assert(res == 0);
+    fm_write.initFileInfo(plaintext_len);
+    assert(fm_write.getFileSize() == plaintext_len && fm_write.getChunksNum() == 1);
+    // Close the file
+    fm_write.closeFile();
 
-    // Destructor will be automatically called when fm_write goes out of scope
-
-    auto fileData = new char[len];
-
+    // Read from file
+    auto fileData = new char[plaintext_len];
     cout << "Reading from test_1.txt file" << endl;
     FileManager fm_read("test_1.txt", FileManager::OpenMode::READ);
-    streamsize bytesRead = fm_read.readChunk(fileData, len);
-
-    // Destructor will be automatically called when fm_read goes out of scope
+    streamsize file_size = fm_read.getFileSize();
+    assert(file_size == plaintext_len);
+    res = fm_read.readChunk(fileData, file_size);
+    assert(res == 0);
 
     cout << "Data read from file: ";
-    for (streamsize i = 0; i < bytesRead; ++i) {
-        cout << fileData[i];
+    for (const char *ptr = fileData; *ptr; ptr++) {
+        cout << *ptr;
     }
     cout << "\n\n[+] Test Passed!" << endl;
     cout << "--------------------------------------------" << endl;
@@ -36,79 +43,160 @@ void testFileManager() {
     remove("test_1.txt");
 }
 
-void testFileManagerWithEncryption() {
-    const char key[] = "0123456789012345";
+void testReadAndWriteChunks() {
+    // Create a 10MB test file
+    ofstream file("test_2.txt", ios::binary);
+    assert(file.is_open());
 
-    // Test AesGcm encryption
-    std::cout << "Testing AesGcm encryption..." << std::endl;
-    AesGcm aesGcm(reinterpret_cast<const unsigned char*>(key));
+    const streamsize MEGABYTE = 1024 * 1024;
+    streamsize size = (10 * MEGABYTE) + (50 * 1024); // 10 MB size + 50 KB in last chunk
 
-    const char plaintext[] = "Hello, World!";
-    const char aad[] = "AdditionalData";
-    unsigned char* ciphertext;
-    unsigned char tag[AesGcm::AES_TAG_LEN];
-    int ciphertext_len = aesGcm.encrypt(
-            reinterpret_cast<unsigned char*>(const_cast<char*>(plaintext)),
-            strlen(plaintext),
-            reinterpret_cast<unsigned char*>(const_cast<char*>(aad)),
-            strlen(aad),
-            ciphertext,
-            tag
-    );
+    // Write actual data to the file to achieve the desired size
+    for (int i = 0; i < size; i++) {
+        file.put(0);
+    }
+    file.close();
 
-    assert(ciphertext_len > 0);
+    // Open the file in read mode and init member variables
+    FileManager fm_read("test_2.txt", FileManager::OpenMode::READ);
+    // Check correct file size
+    cout << "File size in bytes: " << fm_read.getFileSize() << endl;
+    double file_size_MB = (double) fm_read.getFileSize() / (double) MEGABYTE;
+    cout << "Number of MB: " << file_size_MB << endl;
+    assert(file_size_MB > 10);
+    // Check correct number of chunks
+    streamsize chunksNum = fm_read.getChunksNum();
+    cout << "Number of chunks: " << chunksNum << endl;
+    assert(chunksNum == 11);
+    // Check last chunk size
+    streamsize lastChunkSize = fm_read.getLastChunkSize();
+    cout << "Last chunk size in bytes: " << lastChunkSize << endl;
+    assert(lastChunkSize == 50 * 1024);
 
-    // Write the encrypted data to a file using FileManager
-    std::cout << "Writing encrypted data to file..." << std::endl;
-    FileManager fileManager("test_file.txt", FileManager::OpenMode::WRITE);
-    fileManager.writeChunk(reinterpret_cast<const char*>(ciphertext), ciphertext_len);
-    assert(fileManager.getFileSize() == 0);
+    // Open another file in write mode to copy the content
+    FileManager fm_write("test_2_copy.txt", FileManager::OpenMode::WRITE);
+    streamsize chunk_size = Config::CHUNK_SIZE;
+    auto *buffer = new char[chunk_size];
 
-    // Cleanup (optional)
-    delete[] ciphertext;
+    // Define key and init AesGcm
+    const unsigned char key[] = "0123456789abcdef";
+    AesGcm aesGcm = AesGcm(key);
 
-    // Close the file
-    fileManager.~FileManager();
+    // Iterate over each chunk of data
+    for (size_t i = 0; i < chunksNum; ++i) {
+        if (i == chunksNum - 1) {
+            chunk_size = lastChunkSize;
+        }
+        // Init buffers and parameters
+        unsigned char *plaintext = nullptr;
+        unsigned char *aad = nullptr;
+        int aad_len = 0;
+        unsigned char *ciphertext = nullptr;
+        unsigned char *iv;
+        unsigned char tag[AesGcm::AES_TAG_LEN];
+        int ciphertext_len;
 
-    // Reopen the file in read mode
-    std::cout << "Reopening file in read mode..." << std::endl;
-    FileManager fileManagerRead("test_file.txt", FileManager::OpenMode::READ);
+        // Read chunk from file
+        fm_read.readChunk(buffer, chunk_size);
+        // Encrypt chunk
+        ciphertext_len = aesGcm.encrypt(reinterpret_cast<unsigned char *>(buffer),
+                                        static_cast<int>(chunk_size),
+                                        aad, aad_len, ciphertext, tag);
 
-    // Read the encrypted data from the file
-    std::cout << "Reading encrypted data from file..." << std::endl;
-    char* encryptedData = new char[fileManagerRead.getFileSize()];
-    fileManagerRead.readChunk(encryptedData, fileManagerRead.getFileSize());
+        iv = aesGcm.getIV();
 
-    // Test AesGcm decryption
-    std::cout << "Testing AesGcm decryption..." << std::endl;
-    unsigned char* decryptedText;
-    int decrypted_len = aesGcm.decrypt(
-            reinterpret_cast<unsigned char*>(const_cast<char*>(encryptedData)),
-            ciphertext_len,
-            reinterpret_cast<unsigned char*>(const_cast<char*>(aad)),
-            strlen(aad),
-            aesGcm.getIV(),
-            tag,
-            decryptedText
-    );
+        // Decrypt chunk
+        aesGcm.decrypt(ciphertext, ciphertext_len, aad, aad_len, iv, tag, plaintext);
+        // Write chunk to file
+        fm_write.writeChunk(reinterpret_cast<const char *>(plaintext), chunk_size);
 
-    assert(decrypted_len > 0);
-    assert(strcmp(reinterpret_cast<char*>(decryptedText), plaintext) == 0);
+        delete[] plaintext;
+        delete[] aad;
+        delete[] ciphertext;
+        delete[] iv;
+    }
+    delete[] buffer;
 
-    // Cleanup (optional)
-    delete[] encryptedData;
-    delete[] decryptedText;
-    remove("test_file.txt");
+    // Open the 2 files
+    ifstream file1("test_2.txt", ios::binary);
+    ifstream file2("test_2_copy.txt", ios::binary);
+    assert(file1 && file2 && "Failed to open files for comparison");
+//     Compare file content
+    char ch1, ch2;
+    while (file1.get(ch1) && file2.get(ch2)) {
+        assert(ch1 == ch2);
+    }
+
+    // Compare file size
+    assert(FileManager::computeFileSize("test_2.txt") ==
+           FileManager::computeFileSize("test_2_copy.txt"));
+
+    file1.close();
+    file2.close();
+
+    cout << "\n[+] Test Passed!" << endl;
+    cout << "--------------------------------------------" << endl;
+
+    // Delete files
+    remove("test_2.txt");
+    remove("test_2_copy.txt");
+}
+
+void testIsStringValid() {
+    // Valid input
+    string validInput = "example123";
+    cout << "Test valid string" << endl;
+    assert(FileManager::isStringValid(validInput));
+
+    // Valid input with special characters
+    string specialCharsInput = "user@domain";
+    cout << "\nTest valid string with special characters" << endl;
+    assert(FileManager::isStringValid(specialCharsInput));
+
+    // Valid input with special characters
+    string specialCharsInvalidInput = "user@/*%";
+    cout << "\nTest invalid string with special characters" << endl;
+    assert(!FileManager::isStringValid(specialCharsInvalidInput));
+
+    // Empty input
+    string emptyInput;
+    cout << "\nTest empty string" << endl;
+    assert(!FileManager::isStringValid(emptyInput));
+
+    // Input exceeding maximum length
+    string longInput = "thisIsALongFileNameThatExceedsTheMaxLength";
+    cout << "\nTest invalid string with too many characters" << endl;
+    assert(!FileManager::isStringValid(longInput));
+
+    // Input with reserved name
+    string reservedNameInput1 = ".";
+    cout << "\nTest invalid string with reserved name ." << endl;
+    assert(!FileManager::isStringValid(reservedNameInput1));
+
+    // Input with reserved name
+    string reservedNameInput2 = "..";
+    cout << "\nTest invalid string with reserved name .." << endl;
+    assert(!FileManager::isStringValid(reservedNameInput2));
+
+    cout << "\n[+] Test Passed!" << endl;
+    cout << "--------------------------------------------" << endl;
 }
 
 int main() {
-    // Run the tests
 
-    testFileManager();
+    cout << "\nRunning Test Scenario 1: \n" << endl;
+    testReadAndWrite();
 
-//    testFileManagerWithEncryption();
+    cout << "\nRunning Test Scenario 2: \n" << endl;
+    testReadAndWriteChunks();
+
+    cout << "\nRunning Test Scenario 3: \n" << endl;
+    testIsStringValid();
 
     return 0;
 }
+
+
+
 
 
