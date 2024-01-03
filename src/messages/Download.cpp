@@ -8,7 +8,7 @@
 using namespace std;
 
 /**
- * @brief Default constructor for the Download class.
+ * @brief Default constructor for the DownloadM1 class.
  */
 DownloadM1::DownloadM1() = default;
 
