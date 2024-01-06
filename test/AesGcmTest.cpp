@@ -8,8 +8,8 @@
 using namespace std;
 
 // Init for test 1 (Non-empty plaintext and AAD)
-void initializeTestScenario1(const char*& plaintext, int& plaintext_len,
-                             const char*& aad, int& aad_len) {
+void initializeTestScenario1(const char *&plaintext, int &plaintext_len,
+                             const char *&aad, int &aad_len) {
     plaintext = "Hello, this is a test!";
     plaintext_len = strlen(plaintext);
     aad = "12";
@@ -17,8 +17,8 @@ void initializeTestScenario1(const char*& plaintext, int& plaintext_len,
 }
 
 // Init for test 2 (Non-empty plaintext and empty AAD)
-void initializeTestScenario2(const char*& plaintext, int& plaintext_len,
-                             const char*& aad, int& aad_len) {
+void initializeTestScenario2(const char *&plaintext, int &plaintext_len,
+                             const char *&aad, int &aad_len) {
     plaintext = "Hello, this is a test!";
     plaintext_len = strlen(plaintext);
     aad = "";
@@ -26,8 +26,8 @@ void initializeTestScenario2(const char*& plaintext, int& plaintext_len,
 }
 
 // Init for test 3 (Empty plaintext and non-empty AAD)
-void initializeTestScenario3(const char*& plaintext, int& plaintext_len,
-                             const char*& aad, int& aad_len) {
+void initializeTestScenario3(const char *&plaintext, int &plaintext_len,
+                             const char *&aad, int &aad_len) {
     plaintext = "";
     plaintext_len = 0;
     aad = "123";
@@ -35,8 +35,8 @@ void initializeTestScenario3(const char*& plaintext, int& plaintext_len,
 }
 
 // Init for test 4 (Empty plaintext and empty AAD)
-void initializeTestScenario4(const char*& plaintext, int& plaintext_len,
-                             const char*& aad, int& aad_len) {
+void initializeTestScenario4(const char *&plaintext, int &plaintext_len,
+                             const char *&aad, int &aad_len) {
     plaintext = "";
     plaintext_len = 0;
     aad = "";
@@ -44,16 +44,16 @@ void initializeTestScenario4(const char*& plaintext, int& plaintext_len,
 }
 
 // Init for test 5 (Non-empty plaintext but wrong AAD to the decrypt function)
-void initializeTestScenario5(const char*& plaintext, int& plaintext_len,
-                             const char*& aad, int& aad_len) {
+void initializeTestScenario5(const char *&plaintext, int &plaintext_len,
+                             const char *&aad, int &aad_len) {
     plaintext = "Hello, this is a test!";
     plaintext_len = strlen(plaintext);
     aad = "1234";
     aad_len = strlen(aad);
 }
 
-void testEncryptionAndDecryption(AesGcm& aesGcm, const char* plaintext, int plaintext_len,
-                                 const char* aad, int aad_len, uint8_t test_number) {
+void testEncryptionAndDecryption(AesGcm &aesGcm, const char *plaintext, int plaintext_len,
+                                 const char *aad, int aad_len, uint8_t test_number) {
 
     cout << "Original plaintext: " << plaintext << endl;
     cout << "Plaintext length: " << plaintext_len << endl;
@@ -63,9 +63,9 @@ void testEncryptionAndDecryption(AesGcm& aesGcm, const char* plaintext, int plai
 
     // Encrypt
     int ciphertext_len = aesGcm.encrypt(
-            (unsigned char*)plaintext,
+            (unsigned char *) plaintext,
             plaintext_len,
-            (unsigned char*)aad, aad_len,
+            (unsigned char *) aad, aad_len,
             ciphertext,
             tag
     );
@@ -79,7 +79,7 @@ void testEncryptionAndDecryption(AesGcm& aesGcm, const char* plaintext, int plai
     cout << "\nCiphertext length: " << ciphertext_len << endl;
 
     // Get IV for decryption
-    unsigned char* iv = aesGcm.getIV();
+    unsigned char *iv = aesGcm.getIV();
     int iv_len = aesGcm.getIVLen();
     cout << "IV length: " << iv_len << endl;
 
@@ -98,7 +98,7 @@ void testEncryptionAndDecryption(AesGcm& aesGcm, const char* plaintext, int plai
     }
 
     // Decrypt
-    unsigned char* decryptedText = nullptr;
+    unsigned char *decryptedText = nullptr;
     int decrypted_len = aesGcm.decrypt(
             ciphertext, ciphertext_len,
             (unsigned char *) aad, aad_len,
@@ -115,13 +115,13 @@ void testEncryptionAndDecryption(AesGcm& aesGcm, const char* plaintext, int plai
 
     cout << endl;
     if (decrypted_len > 0) {
-        cout << "Decrypted plaintext: " << reinterpret_cast<char*>(decryptedText) << endl;
+        cout << "Decrypted plaintext: " << reinterpret_cast<char *>(decryptedText) << endl;
     }
     cout << "Decrypted plaintext length: " << decrypted_len << endl;
 
     if (plaintext_len != 0 && test_number != 5) {
         // Verify the decrypted text
-        assert(strcmp(plaintext, reinterpret_cast<char*>(decryptedText)) == 0);
+        assert(strcmp(plaintext, reinterpret_cast<char *>(decryptedText)) == 0);
     }
     // Clean up
     delete[] ciphertext;
@@ -135,9 +135,9 @@ int main() {
     const unsigned char key[] = "0123456789abcdef";
     AesGcm aesGcm = AesGcm(key);
 
-    const char* plaintext;
+    const char *plaintext;
     int plaintext_len;
-    const char* aad;
+    const char *aad;
     int aad_len;
 
     // Init for test 1 (Non-empty plaintext and AAD)

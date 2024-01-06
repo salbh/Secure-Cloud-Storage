@@ -9,7 +9,7 @@ using namespace std;
  * Constructor for AesGcm class
  * @param key The encryption key
  */
-AesGcm::AesGcm(const unsigned char* key) {
+AesGcm::AesGcm(const unsigned char *key) {
     // Set the cipher to AES-128 GCM
     m_cipher = EVP_aes_128_gcm();
     // Get block size and IV length for the cipher
@@ -41,8 +41,8 @@ AesGcm::~AesGcm() {
  * @param tag The authentication tag
  * @return Length of the ciphertext on success, -1 on failure
  */
-int AesGcm::encrypt(unsigned char* plaintext, int plaintext_len, unsigned char* aad, int aad_len,
-                    unsigned char*& ciphertext, unsigned char* tag) {
+int AesGcm::encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *aad, int aad_len,
+                    unsigned char *&ciphertext, unsigned char *tag) {
     int len;
     int ciphertext_len;
     // Check for integer overflow
@@ -51,7 +51,7 @@ int AesGcm::encrypt(unsigned char* plaintext, int plaintext_len, unsigned char* 
         return -1;
     }
     // Allocate memory for m_ciphertext buffer
-    m_ciphertext = new (nothrow) unsigned char[plaintext_len + m_block_size];
+    m_ciphertext = new(nothrow) unsigned char[plaintext_len + m_block_size];
     if (!m_ciphertext) {
         cerr << "AesGCM - Error during encryption: Failed to allocate memory for m_ciphertext" << endl;
         return -1;
@@ -106,14 +106,14 @@ int AesGcm::encrypt(unsigned char* plaintext, int plaintext_len, unsigned char* 
  * @param plaintext The output plaintext
  * @return Length of the plaintext on success, -1 on failure
  */
-int AesGcm::decrypt(unsigned char* ciphertext, int ciphertext_len, unsigned char* aad, int aad_len,
-                    unsigned char* iv, unsigned char* tag, unsigned char*& plaintext) {
+int AesGcm::decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *aad, int aad_len,
+                    unsigned char *iv, unsigned char *tag, unsigned char *&plaintext) {
     int len;
     int plaintext_len;
     int ret;
 
     // Allocate memory for m_plaintext buffer
-    m_plaintext = new (nothrow) unsigned char[ciphertext_len];
+    m_plaintext = new(nothrow) unsigned char[ciphertext_len];
     if (!m_plaintext) {
         cerr << "AesGCM - Error during decryption: Failed to allocate memory for plaintext" << endl;
         return -1;
@@ -163,7 +163,7 @@ int AesGcm::decrypt(unsigned char* ciphertext, int ciphertext_len, unsigned char
  * @param msg Error message
  * @return -1 to indicate an error
  */
-int AesGcm::handleErrorEncrypt(const char* msg) {
+int AesGcm::handleErrorEncrypt(const char *msg) {
     cerr << "AesGCM - Error during encryption: " << msg << endl;
     delete[] m_iv;
     delete[] m_ciphertext;
@@ -176,7 +176,7 @@ int AesGcm::handleErrorEncrypt(const char* msg) {
  * @param msg Error message
  * @return -1 to indicate an error
  */
-int AesGcm::handleErrorDecrypt(const char* msg) {
+int AesGcm::handleErrorDecrypt(const char *msg) {
     cerr << "AesGCM - Error during decryption: " << msg << endl;
     delete m_plaintext;
     EVP_CIPHER_CTX_free(m_ctx);
