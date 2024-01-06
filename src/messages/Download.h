@@ -9,7 +9,7 @@ using namespace std;
 
 class DownloadM1 {
 private:
-    int m_message_code;
+    uint8_t m_message_code;
     char m_filename[Config::FILE_NAME_LEN];
 
 public:

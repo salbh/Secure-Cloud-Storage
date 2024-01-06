@@ -1,6 +1,7 @@
 #include "AesGcm.h"
 #include <iostream>
 #include <cstring>
+#include "Config.h"
 
 using namespace std;
 
@@ -85,7 +86,7 @@ int AesGcm::encrypt(unsigned char* plaintext, int plaintext_len, unsigned char* 
     }
     ciphertext_len += len;
     // Get the tag
-    if (!EVP_CIPHER_CTX_ctrl(m_ctx, EVP_CTRL_GCM_GET_TAG, AES_TAG_LEN, tag)) {
+    if (!EVP_CIPHER_CTX_ctrl(m_ctx, EVP_CTRL_GCM_GET_TAG, Config::AES_TAG_LEN, tag)) {
         return handleErrorEncrypt("EVP_CIPHER_CTX_ctrl for tag failed");
     }
     ciphertext = m_ciphertext;
@@ -137,7 +138,7 @@ int AesGcm::decrypt(unsigned char* ciphertext, int ciphertext_len, unsigned char
     plaintext_len = len;
 
     // Set expected tag value.
-    if (!EVP_CIPHER_CTX_ctrl(m_ctx, EVP_CTRL_GCM_SET_TAG, AES_TAG_LEN, tag)) {
+    if (!EVP_CIPHER_CTX_ctrl(m_ctx, EVP_CTRL_GCM_SET_TAG, Config::AES_TAG_LEN, tag)) {
         return handleErrorDecrypt("EVP_CIPHER_CTX_ctrl for tag failed");
     }
     // Finalize the decryption.
