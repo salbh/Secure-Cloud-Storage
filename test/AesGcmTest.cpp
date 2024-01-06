@@ -3,6 +3,7 @@
 #include <cassert>
 #include <iomanip>
 #include "AesGcm.h"
+#include "Config.h"
 
 using namespace std;
 
@@ -57,8 +58,8 @@ void testEncryptionAndDecryption(AesGcm &aesGcm, const char *plaintext, int plai
     cout << "Original plaintext: " << plaintext << endl;
     cout << "Plaintext length: " << plaintext_len << endl;
 
-    unsigned char *ciphertext = nullptr;
-    unsigned char tag[AesGcm::AES_TAG_LEN];
+    unsigned char* ciphertext = nullptr;
+    unsigned char tag[Config::AES_TAG_LEN];
 
     // Encrypt
     int ciphertext_len = aesGcm.encrypt(

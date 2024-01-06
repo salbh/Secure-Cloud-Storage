@@ -33,8 +33,6 @@ public:
 
     int handleErrorDecrypt(const char *msg);
 
-    static constexpr unsigned int AES_TAG_LEN = 16;
-
     unsigned char *getIV();
 
     int getIVLen() const;
