@@ -24,9 +24,9 @@ ListM2::ListM2(uint32_t listSize) {
  * Serialize ListM2 message into a byte buffer
  * @return A dynamically allocated byte buffer containing the serialized message
  */
-uint8_t* ListM2::serialize() {
+uint8_t *ListM2::serialize() {
     // Serialize ListM2 message into a byte buffer
-    uint8_t* buffer = new (nothrow) uint8_t[ListM2::getSize()];
+    uint8_t *buffer = new(nothrow) uint8_t[ListM2::getSize()];
     if (!buffer) {
         cerr << "ListM2 - Error during serialization: Failed to allocate memory" << endl;
         return nullptr;
@@ -46,7 +46,7 @@ uint8_t* ListM2::serialize() {
  * @param buffer The byte buffer to deserialize
  * @return A ListM2 object with the deserialized data
  */
-ListM2 ListM2::deserialize(uint8_t* buffer) {
+ListM2 ListM2::deserialize(uint8_t *buffer) {
     // Deserialize ListM2 message
     ListM2 listM2Message;
 
@@ -79,7 +79,7 @@ ListM3::ListM3() = default;
 /**
  * Constructor of ListM3 to be used in case of serialization
  */
-ListM3::ListM3(uint32_t list_size, uint8_t* file_list) {
+ListM3::ListM3(uint32_t list_size, uint8_t *file_list) {
     m_message_code = static_cast<uint8_t>(Message::LIST_RESPONSE);
     m_list_size = list_size;
     if (m_list_size > 0) {
@@ -99,8 +99,8 @@ ListM3::~ListM3() {
  * Serialize ListM3 message into a byte buffer
  * @return A dynamically allocated byte buffer containing the serialized message
  */
-uint8_t* ListM3::serialize() {
-    uint8_t* buffer = new (nothrow) uint8_t[ListM3::getSize()];
+uint8_t *ListM3::serialize() {
+    uint8_t *buffer = new(nothrow) uint8_t[ListM3::getSize()];
     if (!buffer) {
         cerr << "ListM3 - Error during serialization: Failed to allocate memory" << endl;
         return nullptr;
@@ -123,7 +123,7 @@ uint8_t* ListM3::serialize() {
  * @param buffer_len The length of the buffer
  * @return A ListM3 object with the deserialized data
  */
-ListM3 ListM3::deserialize(uint8_t* buffer, int buffer_len) {
+ListM3 ListM3::deserialize(uint8_t *buffer, int buffer_len) {
     ListM3 listM3Message;
 
     size_t position = 0;
@@ -147,6 +147,6 @@ ListM3 ListM3::deserialize(uint8_t* buffer, int buffer_len) {
 size_t ListM3::getSize() const {
     // Sum of the message code size
     // plus the size of the list of files in bytes
-    return sizeof (m_message_code) +
+    return sizeof(m_message_code) +
            m_list_size;
 }
