@@ -4,6 +4,7 @@
 
 class Hash {
 
+public:
     void generateSHA256(unsigned char *input_buffer, unsigned long input_buffer_size, unsigned char *&digest,
                         unsigned int &digest_size);
 };
