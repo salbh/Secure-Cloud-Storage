@@ -125,7 +125,6 @@ void testEncryptionAndDecryption(AesGcm &aesGcm, const char *plaintext, int plai
     }
     // Clean up
     delete[] ciphertext;
-    delete[] decryptedText;
 
     cout << "\n[+] Test Passed!" << endl;
     cout << "--------------------------------------------" << endl;
@@ -164,9 +163,9 @@ int main() {
     testEncryptionAndDecryption(aesGcm, plaintext, plaintext_len,
                                 aad, aad_len, 4);
 
-    // Init for test 5 (Empty plaintext and empty AAD)
+    // Init for test 5 (Non-empty plaintext but wrong AAD to the decrypt function)
     initializeTestScenario5(plaintext, plaintext_len, aad, aad_len);
-    cout << "Running Test Scenario 5: \n" << endl;
+    cout << "Running Test Scenario 5 (wrong AAD): \n" << endl;
     testEncryptionAndDecryption(aesGcm, plaintext, plaintext_len,
                                 aad, aad_len, 5);
 

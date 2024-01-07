@@ -12,8 +12,7 @@ using namespace std;
 AesGcm::AesGcm(const unsigned char *key) {
     // Set the cipher to AES-128 GCM
     m_cipher = EVP_aes_128_gcm();
-    // Get block size and IV length for the cipher
-    m_block_size = EVP_CIPHER_block_size(m_cipher);
+    // Get IV length for the cipher
     m_iv_len = EVP_CIPHER_iv_length(m_cipher);
     // Get key length and allocate memory for the key
     m_key_len = EVP_CIPHER_key_length(m_cipher);
@@ -45,13 +44,8 @@ int AesGcm::encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *
                     unsigned char *&ciphertext, unsigned char *tag) {
     int len;
     int ciphertext_len;
-    // Check for integer overflow
-    if (plaintext_len + m_block_size > INT_MAX) {
-        cerr << "AesGCM - Error during encryption: Integer overflow (file too large)" << endl;
-        return -1;
-    }
     // Allocate memory for m_ciphertext buffer
-    m_ciphertext = new(nothrow) unsigned char[plaintext_len + m_block_size];
+    m_ciphertext = new(nothrow) unsigned char[plaintext_len];
     if (!m_ciphertext) {
         cerr << "AesGCM - Error during encryption: Failed to allocate memory for m_ciphertext" << endl;
         return -1;
@@ -153,6 +147,7 @@ int AesGcm::decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char
         return plaintext_len;
     } else {
         // Verify failed
+        delete[] m_plaintext;
         cerr << "AesGCM - Error during decryption: EVP_DecryptFinal_ex failed" << endl;
         return -1;
     }
@@ -178,9 +173,18 @@ int AesGcm::handleErrorEncrypt(const char *msg) {
  */
 int AesGcm::handleErrorDecrypt(const char *msg) {
     cerr << "AesGCM - Error during decryption: " << msg << endl;
-    delete m_plaintext;
+    delete[] m_plaintext;
     EVP_CIPHER_CTX_free(m_ctx);
     return -1;
+}
+
+/**
+ * Safely delete the IV from memory
+ */
+void AesGcm::cleanIV() {
+    // Cleanse and delete the IV
+    OPENSSL_cleanse(m_iv, m_iv_len);
+    delete[] m_iv;
 }
 
 /**
