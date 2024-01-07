@@ -13,7 +13,6 @@ private:
     unsigned char *m_key;
     int m_key_len;
     int m_iv_len;
-    int m_block_size;
     unsigned char *m_ciphertext;
     unsigned char *m_plaintext;
     unsigned char *m_iv;
@@ -36,6 +35,8 @@ public:
     unsigned char *getIV();
 
     int getIVLen() const;
+
+    void cleanIV();
 };
 
 #endif //SECURE_CLOUD_STORAGE_AESGCM_H
