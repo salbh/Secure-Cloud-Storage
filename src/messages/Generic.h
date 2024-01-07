@@ -17,7 +17,7 @@ private:
     int m_ciphertext_len{};
 
 public:
-    explicit Generic(uint32_t counter);
+    Generic(uint32_t counter);
 
     ~Generic();
 
@@ -27,7 +27,7 @@ public:
 
     uint8_t *serialize();
 
-    Generic deserialize(uint8_t *message_buffer);
+    static Generic deserialize(uint8_t *message_buffer, size_t ciphertext_len);
 
     static size_t getSize(int plaintext_len);
 

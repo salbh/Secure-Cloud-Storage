@@ -92,9 +92,10 @@ uint8_t *Generic::serialize() {
 /**
  * Deserialize a byte buffer into a Generic message
  * @param buffer The byte buffer to deserialize
+ * @param ciphertext_len Length of the ciphertext
  * @return A Generic object with the deserialized data
  */
-Generic Generic::deserialize(uint8_t* buffer) {
+Generic Generic::deserialize(uint8_t* buffer, size_t ciphertext_len) {
     // Create a Generic object for deserialization
     Generic genericMessage;
 
@@ -112,7 +113,7 @@ Generic Generic::deserialize(uint8_t* buffer) {
     position += Config::AES_TAG_LEN;
 
     // Deserialize the ciphertext
-    genericMessage.m_ciphertext_len = position + genericMessage.m_ciphertext_len;
+    genericMessage.m_ciphertext_len = static_cast<int>(ciphertext_len);
     genericMessage.m_ciphertext = new uint8_t[genericMessage.m_ciphertext_len];
     memcpy(genericMessage.m_ciphertext, buffer + position, genericMessage.m_ciphertext_len);
 
@@ -128,7 +129,7 @@ size_t Generic::getSize(int plaintext_len) {
     return Config::IV_LEN +
            Config::AAD_LEN +
            Config::AES_TAG_LEN +
-           plaintext_len; // Ciphertext length
+           plaintext_len; // Is equal to the ciphertext length
 }
 
 
