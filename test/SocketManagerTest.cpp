@@ -119,7 +119,7 @@ struct TestMessage {
 
 
 void server() {
-    cout << "SERVER PART" << endl;
+    cout << "*SERVER SIDE RUN*\n" << endl;
     SocketManager server_socket("localhost", 5000, 10);
     SocketManager* socket = nullptr;
     int server_socket_descriptor = server_socket.accept();
@@ -135,10 +135,10 @@ void server() {
         int msg_size = 5;
 
         socket->receive(msg, msg_size);
-        cout << "SocketManagerTest - Msg Received: " << msg << endl;
+        cout << "SocketManagerTest - Server - Test Message Received: " << msg << endl;
 
         if (!strcmp((const char*)msg, MSG))
-            cout << "SocketManagerTest - Stringa uguale" << endl;
+            cout << "SocketManagerTest - Server - Test Message Match\n" << endl;
     }
 
     //message parameters definition
@@ -152,27 +152,27 @@ void server() {
     TestMessage packet(iv, aad, tag, type, text);
 
     uint8_t* serialized_packet = packet.serialize();
-    cout << "Sending server message..." << endl;
+    cout << "SocketManagerTest - Server - Sending Message" << endl;
     socket->send(serialized_packet, TestMessage::getSize());
 
     delete[] serialized_packet;
-    delete socket;
+    //delete socket;
 }
 
 
 void client() {
     this_thread::sleep_for(chrono::seconds(2));
     SocketManager client_socket("localhost", 5000);
-    cout << "CLIENT PART" << endl;
+    cout << "*CLIENT SIDE RUN*" << endl;
 
     uint8_t* msg = (uint8_t*)"test\0";
     int msg_size = 5;
 
     for (int i = 0; i < 3; ++i) {
-        cout << "send message: " << msg << endl;
-        cout << "sending client message..." << endl;
+        cout << "SocketManagerTest - Client - Send message: " << msg << endl;
         client_socket.send(msg, msg_size);
     }
+    cout << endl;
 
     uint8_t serialized_packet[TestMessage::getSize()];
     client_socket.receive(serialized_packet, TestMessage::getSize());
@@ -182,7 +182,10 @@ void client() {
 
 
 int main() {
-    cout << "**SOCKET MANAGER TEST**" << endl;
+    cout<< "*******************************\n"
+           "***** SOCKET MANAGER TEST *****\n"
+           "*******************************\n" << endl;
+
     thread server_thread(server);
     thread client_thread(client);
 
