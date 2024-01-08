@@ -92,7 +92,7 @@ struct TestMessage {
 
     void print() const {
 
-        cout << "\nPACKET:" << endl;
+        cout << "PACKET:" << endl;
         cout << "IV: ";
         for (unsigned char i : m_iv) {
             cout << i;
@@ -152,7 +152,7 @@ void server() {
     TestMessage packet(iv, aad, tag, type, text);
 
     uint8_t* serialized_packet = packet.serialize();
-    cout << "SocketManagerTest - Server - Sending Message" << endl;
+    cout << "SocketManagerTest - Server - Sending Message\n" << endl;
     socket->send(serialized_packet, TestMessage::getSize());
 
     delete[] serialized_packet;
@@ -177,6 +177,7 @@ void client() {
     uint8_t serialized_packet[TestMessage::getSize()];
     client_socket.receive(serialized_packet, TestMessage::getSize());
     TestMessage packet = TestMessage::deserialize(serialized_packet);
+    cout << "SocketManagerTest - Client - Message Received: " << endl;
     packet.print();
 }
 
@@ -191,6 +192,7 @@ int main() {
 
     server_thread.join();
     client_thread.join();
+    cout << "\n+TEST PASSED+" << endl;
 
     return 0;
 }
