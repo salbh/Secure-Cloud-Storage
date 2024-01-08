@@ -132,7 +132,7 @@ AuthenticationM3::AuthenticationM3(uint8_t *ephemeral_key, uint32_t ephemeral_ke
     m_ephemeral_key_len = static_cast<uint32_t>(ephemeral_key_len);
 
     // Copy IV, AAD, Tag, and encrypted digital signature
-    memcpy(m_iv, iv, EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t));
+    memcpy(m_iv, iv, Config::IV_LEN * sizeof(uint8_t));
     memcpy(m_aad, aad, Config::AAD_LEN * sizeof(char));
     memcpy(m_tag, tag, Config::AES_TAG_LEN * sizeof(char));
     memcpy(m_encrypted_digital_signature, encrypted_digital_signature,
@@ -155,7 +155,7 @@ int AuthenticationM3::getMessageSize() {
     // Calculate the total size by summing the sizes of individual components
     message_size += EPHEMERAL_KEY_LEN * sizeof(uint8_t);
     message_size += sizeof(uint32_t);
-    message_size += EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t);
+    message_size += Config::IV_LEN * sizeof(uint8_t);
     message_size += Config::AAD_LEN * sizeof(char);
     message_size += Config::AES_TAG_LEN * sizeof(char);
     message_size += ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t);
@@ -189,8 +189,8 @@ uint8_t *AuthenticationM3::serialize() {
 
     // Copy IV, AAD, Tag, encrypted digital signature, serialized certificate, and its size
     memcpy(message_buffer + current_buffer_position, &m_iv,
-           EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t));
-    current_buffer_position += EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t);
+           Config::IV_LEN * sizeof(uint8_t));
+    current_buffer_position += Config::IV_LEN * sizeof(uint8_t);
     memcpy(message_buffer + current_buffer_position, &m_aad, Config::AAD_LEN * sizeof(char));
     current_buffer_position += Config::AAD_LEN * sizeof(char);
     memcpy(message_buffer + current_buffer_position, &m_tag, Config::AES_TAG_LEN * sizeof(char));
@@ -230,8 +230,8 @@ AuthenticationM3 AuthenticationM3::deserialize(uint8_t *message_buffer) {
 
     // Copy IV, AAD, Tag, encrypted digital signature, serialized certificate, and its size
     memcpy(&authenticationM3.m_iv, message_buffer + current_buffer_position,
-           EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t));
-    current_buffer_position += EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t);
+           Config::IV_LEN* sizeof(uint8_t));
+    current_buffer_position += Config::IV_LEN * sizeof(uint8_t);
     memcpy(&authenticationM3.m_aad, message_buffer + current_buffer_position,
            Config::AAD_LEN * sizeof(char));
     current_buffer_position += Config::AAD_LEN * sizeof(char);
@@ -267,7 +267,7 @@ AuthenticationM4::AuthenticationM4() = default;
 AuthenticationM4::AuthenticationM4(unsigned char *iv, unsigned char *aad, unsigned char *tag,
                                    uint8_t *encrypted_digital_signature) {
     // Copy IV, AAD, Tag, and encrypted digital signature
-    memcpy(m_iv, iv, EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t));
+    memcpy(m_iv, iv, Config::IV_LEN * sizeof(uint8_t));
     memcpy(m_aad, aad, Config::AAD_LEN * sizeof(char));
     memcpy(m_tag, tag, Config::AES_TAG_LEN * sizeof(char));
     memcpy(m_encrypted_digital_signature, encrypted_digital_signature,
@@ -282,7 +282,7 @@ int AuthenticationM4::getMessageSize() {
     int message_size = 0;
 
     // Calculate the total size by summing the sizes of individual components
-    message_size += EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t);
+    message_size += Config::IV_LEN * sizeof(uint8_t);
     message_size += Config::AAD_LEN * sizeof(char);
     message_size += Config::AES_TAG_LEN * sizeof(char);
     message_size += ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t);
@@ -307,8 +307,8 @@ uint8_t *AuthenticationM4::serialize() {
 
     // Copy IV, AAD, Tag, and encrypted digital signature
     memcpy(message_buffer + current_buffer_position, &m_iv,
-           EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t));
-    current_buffer_position += EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t);
+           Config::IV_LEN * sizeof(uint8_t));
+    current_buffer_position += Config::IV_LEN * sizeof(uint8_t);
     memcpy(message_buffer + current_buffer_position, &m_aad, Config::AAD_LEN * sizeof(char));
     current_buffer_position += Config::AAD_LEN * sizeof(char);
     memcpy(message_buffer + current_buffer_position, &m_tag, Config::AES_TAG_LEN * sizeof(char));
@@ -332,8 +332,8 @@ AuthenticationM4 AuthenticationM4::deserialize(uint8_t *message_buffer) {
 
     // Copy IV, AAD, Tag, and encrypted digital signature
     memcpy(&authenticationM4.m_iv, message_buffer + current_buffer_position,
-           EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t));
-    current_buffer_position += EVP_CIPHER_iv_length(EVP_aes_128_gcm()) * sizeof(uint8_t);
+           Config::IV_LEN * sizeof(uint8_t));
+    current_buffer_position += Config::IV_LEN * sizeof(uint8_t);
     memcpy(&authenticationM4.m_aad, message_buffer + current_buffer_position,
            Config::AAD_LEN * sizeof(char));
     current_buffer_position += Config::AAD_LEN * sizeof(char);

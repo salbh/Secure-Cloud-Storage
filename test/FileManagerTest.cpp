@@ -93,7 +93,7 @@ void testReadAndWriteChunks() {
         int aad_len = 0;
         unsigned char *ciphertext = nullptr;
         unsigned char *iv;
-        unsigned char tag[AesGcm::AES_TAG_LEN];
+        unsigned char tag[Config::AES_TAG_LEN];
         int ciphertext_len;
 
         // Read chunk from file
