@@ -3,14 +3,10 @@
 #include <chrono>
 #include <thread>
 #include <arpa/inet.h>
-
-#include <csignal>
-
 #include "SocketManager.h"
 #include "Config.h"
 
 #define MSG "test\0"
-#define MSG_SIZE 5
 
 using namespace std;
 
