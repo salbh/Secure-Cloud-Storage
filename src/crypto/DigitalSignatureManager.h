@@ -7,6 +7,7 @@
 class DigitalSignatureManager {
 
 
+public:
     void generateDS(unsigned char *input_buffer, long input_buffer_size, unsigned char *&digital_signature,
                     unsigned int &digital_signature_size, EVP_PKEY *private_key);
 
