@@ -128,8 +128,3 @@ int SocketManager::accept() {
     return socket_descriptor;
 }
 
-void SocketManager::shutdown() {
-    if (::shutdown(m_socket, SHUT_RDWR) == -1) {
-        cerr << "SocketManager - Error during shutdown";
-    }
-}

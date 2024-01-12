@@ -1,11 +1,9 @@
 #include <iostream>
-#include <chrono>
 #include <thread>
 #include <mutex>
 #include <arpa/inet.h>
 #include <condition_variable>
 #include <cstring>
-#include <csignal>
 #include "SocketManager.h"
 #include "Generic.h"
 #include "SimpleMessage.h"
@@ -26,7 +24,7 @@ bool g_testCompleted = false;
  * Function to send a text message (executed by the Client)
  * @param socket The socket used to send the text message
  */
-void sendTextMessage(SocketManager& socket) {
+void sendTextMessage(SocketManager &socket) {
     uint8_t *msg = (uint8_t *) MSG;
 
     for (int i = 0; i < MSG_NUM; ++i) {
@@ -35,7 +33,6 @@ void sendTextMessage(SocketManager& socket) {
             cout << "SocketManagerTest - Client - Send message: " << msg << endl;
             socket.send(msg, TEST_MSG_SIZE);
         }
-        this_thread::sleep_for(chrono::milliseconds(50)); // Introduce delay for synchronization
     }
     cout << endl;
 }
@@ -44,7 +41,7 @@ void sendTextMessage(SocketManager& socket) {
  * Function to receive a text message (executed by the Server)
  * @param socket The socket used to receive the text message
  */
-void receiveTextMessage(SocketManager& socket) {
+void receiveTextMessage(SocketManager &socket) {
     for (int i = 0; i < MSG_NUM; ++i) {
         uint8_t msg[TEST_MSG_SIZE];
 
@@ -63,12 +60,11 @@ void receiveTextMessage(SocketManager& socket) {
  * Function to send a Generic message with an ACK (executed by the Server)
  * @param socket The socket used to send the Generic message
  */
-void sendGenericMessage(SocketManager& socket) {
-    SimpleMessage simple_message(static_cast<uint8_t>(Result::ACK));
+void sendGenericMessage(SocketManager &socket) {
+    SimpleMessage simple_message(static_cast<uint8_t>(Result::NACK));
     uint8_t *serialized_message = simple_message.serialize();
     Generic generic_message(1);
     const unsigned char key[] = "1234567890123456";
-
     generic_message.encrypt(key, serialized_message, sizeof(uint8_t));
     serialized_message = generic_message.serialize();
     if (socket.send(serialized_message, Generic::getSize(sizeof(uint8_t))) == -1) {
@@ -82,7 +78,7 @@ void sendGenericMessage(SocketManager& socket) {
  * Function to receive a Generic message (executed by the Client)
  * @param socket The socket used to receive the Generic message
  */
-void receiveGenericMessage(SocketManager& socket) {
+void receiveGenericMessage(SocketManager &socket) {
     size_t generic_message_size = Generic::getSize(sizeof(uint8_t));
     uint8_t *serialized_message = new uint8_t[generic_message_size];
     if (socket.receive(serialized_message, generic_message_size) == -1) {
@@ -98,7 +94,7 @@ void receiveGenericMessage(SocketManager& socket) {
     simple_message.deserialize(plaintext);
     {
         lock_guard<mutex> lock(g_mutex);
-        cout << simple_message.getMessageCode();
+        cout << (int) simple_message.getMessageCode();
     }
 }
 
@@ -107,7 +103,6 @@ void server() {
         lock_guard<mutex> lock(g_mutex);
         cout << "*SERVER SIDE RUN*\n" << endl;
     }
-
     // Init Server listening socket
     SocketManager server_socket("localhost", 5000, 10);
     int server_socket_descriptor = server_socket.accept();
@@ -117,14 +112,11 @@ void server() {
     } else {
         // Init Server communication socket
         SocketManager server_comm_socket(server_socket_descriptor);
-        this_thread::sleep_for(chrono::seconds(2));
         // Receive a text message for test
         receiveTextMessage(server_comm_socket);
         // Send a Generic message
         sendGenericMessage(server_comm_socket);
-        this_thread::sleep_for(chrono::seconds(3));
     }
-
     {
         lock_guard<mutex> lock(g_mutex);
         g_testCompleted = true;
@@ -137,17 +129,12 @@ void client() {
         lock_guard<mutex> lock(g_mutex);
         cout << "*CLIENT SIDE RUN*" << endl;
     }
-
-    this_thread::sleep_for(chrono::seconds(1));
-
     // Init client socket
     SocketManager client_socket("localhost", 5000);
     // Send a text message for test
     sendTextMessage(client_socket);
-    this_thread::sleep_for(chrono::seconds(3));
     // Receive a Generic message
     receiveGenericMessage(client_socket);
-
     {
         unique_lock<mutex> lock(g_mutex);
         // Wait for the server to complete the test
@@ -162,17 +149,14 @@ int main() {
                 "***** SOCKET MANAGER TEST *****\n"
                 "*******************************\n" << endl;
     }
-
     thread server_thread(server);
     thread client_thread(client);
 
     server_thread.join();
     client_thread.join();
-
     {
         lock_guard<mutex> lock(g_mutex);
         cout << "\n+TEST PASSED+" << endl;
     }
-
     return 0;
 }
