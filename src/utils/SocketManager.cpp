@@ -16,7 +16,7 @@
  *
  * @return The socket descriptor on success, or -1 on error.
  */
-int SocketManager::initSocket(const string &ip_address, int port, sockaddr_in& server_address, bool isServer) {
+int SocketManager::initSocket(const string &ip_address, int port, sockaddr_in &server_address, bool isServer) {
     //socket creation
     if (isServer) {
         m_listening_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -30,7 +30,7 @@ int SocketManager::initSocket(const string &ip_address, int port, sockaddr_in& s
     server_address.sin_port = htons(port);
     inet_pton(AF_INET, ip_address.c_str(), &server_address.sin_addr);
 
-    if(isServer) {
+    if (isServer) {
         return m_listening_socket;
     } else {
         return m_socket;
@@ -43,7 +43,7 @@ int SocketManager::initSocket(const string &ip_address, int port, sockaddr_in& s
  * @param server_port port of the server
  * @param max_requests max number of clients simultaneously waiting
  */
-SocketManager::SocketManager(const string& server_ip, int server_port, int max_requests) {
+SocketManager::SocketManager(const string &server_ip, int server_port, int max_requests) {
     sockaddr_in server_address{};
 
     //create and check the socket
@@ -67,7 +67,7 @@ SocketManager::SocketManager(const string& server_ip, int server_port, int max_r
  * @param server_ip ip of the server
  * @param server_port ip of the server
  */
-SocketManager::SocketManager(const string& server_ip, int server_port) {
+SocketManager::SocketManager(const string &server_ip, int server_port) {
     sockaddr_in server_address{};
 
     //create and check the socket
@@ -81,7 +81,7 @@ SocketManager::SocketManager(const string& server_ip, int server_port) {
     }
 }
 
-SocketManager::SocketManager(int socket_descriptor):m_socket(socket_descriptor) {
+SocketManager::SocketManager(int socket_descriptor) : m_socket(socket_descriptor) {
 }
 
 SocketManager::~SocketManager() {
@@ -89,7 +89,7 @@ SocketManager::~SocketManager() {
     close(m_listening_socket);
 }
 
-int SocketManager::send(uint8_t* message_buffer, int message_buffer_size) {
+int SocketManager::send(uint8_t *message_buffer, size_t message_buffer_size) {
     int result = ::send(m_socket, message_buffer, message_buffer_size, 0);
     if (result == -1) {
         cerr << "SocketManager - Error while sending the message" << endl;
@@ -98,7 +98,7 @@ int SocketManager::send(uint8_t* message_buffer, int message_buffer_size) {
     return 0;
 }
 
-int SocketManager::receive(uint8_t* message_buffer, int message_buffer_size) {
+int SocketManager::receive(uint8_t *message_buffer, size_t message_buffer_size) {
     int result = recv(m_socket, message_buffer, message_buffer_size, MSG_WAITALL);
     if (result == 0) {
         cerr << "SocketManager - Error: connection closed!" << endl;
@@ -121,7 +121,6 @@ int SocketManager::accept() {
                                      (unsigned int *) &client_address_size);
     if (socket_descriptor == -1) {
         cerr << "SocketManager - Error during the connection request handling!" << endl;
-        return socket_descriptor;
     }
     return socket_descriptor;
 }

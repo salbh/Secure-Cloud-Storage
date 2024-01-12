@@ -95,7 +95,7 @@ uint8_t *Generic::serialize() {
  * @param ciphertext_len Length of the ciphertext
  * @return A Generic object with the deserialized data
  */
-Generic Generic::deserialize(uint8_t* buffer, size_t ciphertext_len) {
+Generic Generic::deserialize(uint8_t *buffer, size_t ciphertext_len) {
     // Create a Generic object for deserialization
     Generic genericMessage;
 
@@ -130,6 +130,35 @@ size_t Generic::getSize(int plaintext_len) {
            Config::AAD_LEN +
            Config::AES_TAG_LEN +
            plaintext_len; // Is equal to the ciphertext length
+}
+
+/**
+ * Print method to display the Generic message's fields
+ */
+void Generic::print() const {
+    cout << "PACKET:" << endl;
+    cout << "IV: ";
+    for (unsigned char i: m_iv) {
+        cout << i;
+    }
+    cout << endl;
+
+    cout << "AAD: ";
+    for (unsigned char i: m_aad) {
+        cout << i;
+    }
+    cout << endl;
+
+    cout << "TAG: ";
+    for (unsigned char i: m_tag) {
+        cout << i;
+    }
+    cout << endl;
+
+    for (int i = 0; i < 15; i++) {
+        cout << hex << static_cast<int>(m_ciphertext[i]);
+    }
+    cout << dec << endl;
 }
 
 

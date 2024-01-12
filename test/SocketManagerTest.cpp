@@ -1,191 +1,126 @@
 #include <iostream>
-#include <cstring>
 #include <chrono>
 #include <thread>
 #include <arpa/inet.h>
+#include <cstring>
 #include "SocketManager.h"
-#include "Config.h"
+#include "Generic.h"
+#include "SimpleMessage.h"
+#include "CodesManager.h"
 
-#define MSG "test\0"
+#define MSG "hello\0"
+#define TEST_MSG_SIZE 6
+#define MSG_NUM 3
 
 using namespace std;
 
-struct TestMessage {
+/**
+ * Function to send a text message (executed by the Client)
+ * @param socket The socket used to send the text message
+ */
+void sendTextMessage(SocketManager socket) {
+    uint8_t *msg = (uint8_t *) MSG;
 
-    unsigned char m_iv[Config::IV_LEN];
-    unsigned char m_aad[Config::AAD_LEN];
-    unsigned char m_tag[Config::AES_TAG_LEN];
-    uint8_t m_type;
-    char m_text[20];
-
-    TestMessage() {}
-
-    TestMessage(unsigned char *iv, unsigned char *aad, unsigned char *tag, uint8_t type, string text) {
-
-        memcpy(this->m_iv, iv, Config::IV_LEN);
-        memcpy(this->m_aad, aad, Config::AAD_LEN);
-        memcpy(this->m_tag, tag, Config::AES_TAG_LEN);
-        this->m_type = type;
-
-        memset(this->m_text, 0, sizeof(this->m_text));
-        strcpy(this->m_text, text.c_str());
-
+    for (int i = 0; i < MSG_NUM; ++i) {
+        cout << "SocketManagerTest - Client - Send message: " << msg << endl;
+        socket.send(msg, TEST_MSG_SIZE);
     }
+    cout << endl;
+}
 
-    uint8_t *serialize() const {
+/**
+ * Function to receive a text message (executed by the Server)
+ * @param socket The socket used to receive the text message
+ */
+void receiveTextMessage(SocketManager socket) {
+    for (int i = 0; i < MSG_NUM; ++i) {
+        uint8_t msg[TEST_MSG_SIZE];
 
-        uint8_t *buffer = new uint8_t[TestMessage::getSize()];
+        socket.receive(msg, TEST_MSG_SIZE);
+        cout << "SocketManagerTest - Server - Test Message Received: " << msg << endl;
 
-        size_t position = 0;
-        memcpy(buffer, &m_iv, Config::IV_LEN * sizeof(uint8_t));
-        position += Config::IV_LEN * sizeof(uint8_t);
-
-        memcpy(buffer + position, &m_aad, Config::AAD_LEN * sizeof(uint8_t));
-        position += Config::AAD_LEN * sizeof(uint8_t);
-
-        memcpy(buffer + position, &m_tag, Config::AES_TAG_LEN * sizeof(uint8_t));
-        position += Config::AES_TAG_LEN * sizeof(uint8_t);
-
-        memcpy(buffer + position, &m_type, sizeof(uint8_t));
-        position += sizeof(uint8_t);
-
-
-        memcpy(buffer + position, m_text, 20 * sizeof(char));
-
-        return buffer;
+        if (!strcmp((const char *) msg, MSG))
+            cout << "SocketManagerTest - Server - Test Message Match\n" << endl;
     }
+}
 
-    static TestMessage deserialize(uint8_t *buffer) {
+/**
+ * Function to send a Generic message with an ACK (executed by the Server)
+ * @param socket The socket used to send the Generic message
+ */
+void sendGenericMessage(SocketManager socket) {
+    SimpleMessage simple_message(static_cast<uint8_t>(Result::ACK));
+    uint8_t *serialized_message = simple_message.serialize();
+    Generic generic_message(1);
+    const unsigned char key[] = "1234567890123456";
 
-        TestMessage packet;
-
-        size_t position = 0;
-        memcpy(packet.m_iv, buffer, Config::IV_LEN * sizeof(uint8_t));
-        position += Config::IV_LEN * sizeof(uint8_t);
-
-        memcpy(packet.m_aad, buffer + position, Config::AAD_LEN * sizeof(uint8_t));
-        position += Config::AAD_LEN * sizeof(uint8_t);
-
-        memcpy(packet.m_tag, buffer + position, Config::AES_TAG_LEN * sizeof(uint8_t));
-        position += Config::AES_TAG_LEN * sizeof(uint8_t);
-
-        memcpy(&packet.m_type, buffer + position, sizeof(uint8_t));
-        position += sizeof(uint8_t);
-
-        memcpy(packet.m_text, buffer + position, 20 * sizeof(char));
-
-        return packet;
+    generic_message.encrypt(key, serialized_message, sizeof(uint8_t));
+    serialized_message = generic_message.serialize();
+    if (socket.send(serialized_message, Generic::getSize(sizeof(uint8_t))) == -1) {
+        cout << "SocketManagerTest - Server - Error in sending Generic message\n" << endl;
     }
+    delete[] serialized_message;
+}
 
-    static int getSize() {
-
-        int size = 0;
-
-        size += Config::IV_LEN * sizeof(uint8_t);
-        size += Config::AAD_LEN * sizeof(uint8_t);
-        size += Config::AES_TAG_LEN * sizeof(uint8_t);
-        size += sizeof(uint8_t);
-        size += 20 * sizeof(char);
-
-        return size;
+/**
+ * Function to receive a Generic message (executed by the Client)
+ * @param socket The socket used to receive the Generic message
+ */
+void receiveGenericMessage(SocketManager socket) {
+    size_t generic_message_size = Generic::getSize(sizeof(uint8_t));
+    uint8_t *serialized_message = new uint8_t[generic_message_size];
+    if (socket.receive(serialized_message, generic_message_size) == -1) {
+        cout << "SocketManagerTest - Client - Error in receiving Generic message\n" << endl;
     }
+    Generic generic_message = Generic::deserialize(serialized_message,
+                                                   generic_message_size);
+    delete[] serialized_message;
+    uint8_t *plaintext = new uint8_t[generic_message_size];
+    const unsigned char key[] = "1234567890123456";
+    generic_message.decrypt(key, plaintext);
+    SimpleMessage simple_message;
+    simple_message.deserialize(plaintext);
+    cout << simple_message.getMessageCode();
 
-    void print() const {
-
-        cout << "PACKET:" << endl;
-        cout << "IV: ";
-        for (unsigned char i : m_iv) {
-            cout << i;
-        }
-        cout << endl;
-
-        cout << "AAD: ";
-        for (unsigned char i : m_aad) {
-            cout << i;
-        }
-        cout << endl;
-
-        cout << "TAG: ";
-        for (unsigned char i : m_tag) {
-            cout << i;
-        }
-        cout << endl;
-
-        cout << "TYPE: " << static_cast<int>(m_type) << endl;
-        cout << "TEXT: " << m_text << endl;
-    }
-};
-
-
+}
 
 void server() {
     cout << "*SERVER SIDE RUN*\n" << endl;
+    // Init Server listening socket
     SocketManager server_socket("localhost", 5000, 10);
-    SocketManager* socket = nullptr;
     int server_socket_descriptor = server_socket.accept();
-    if (server_socket_descriptor == -1){
+    if (server_socket_descriptor == -1) {
         cout << "SocketManagerTest - Error on accept function" << endl;
     } else {
-        socket = new SocketManager(server_socket_descriptor);
+        // Init Server communication socket
+        SocketManager server_comm_socket(server_socket_descriptor);
+        this_thread::sleep_for(chrono::seconds(2));
+        // Receive a text message for test
+        receiveTextMessage(server_comm_socket);
+        // Send a Generic message
+        sendGenericMessage(server_comm_socket);
     }
 
-    //send of the message
-    for (int i = 0; i < 3; ++i) {
-        uint8_t msg[5];
-        int msg_size = 5;
-
-        socket->receive(msg, msg_size);
-        cout << "SocketManagerTest - Server - Test Message Received: " << msg << endl;
-
-        if (!strcmp((const char*)msg, MSG))
-            cout << "SocketManagerTest - Server - Test Message Match\n" << endl;
-    }
-
-    //message parameters definition
-    unsigned char* iv = (unsigned char*)"012345678901";
-    unsigned char* aad = (unsigned char*)"1234";
-    unsigned char* tag = (unsigned char*)"0123456789123456";
-    uint8_t type = 2;
-    string text = "Socket Test Message";
-
-    //message object creation
-    TestMessage packet(iv, aad, tag, type, text);
-
-    uint8_t* serialized_packet = packet.serialize();
-    cout << "SocketManagerTest - Server - Sending Message\n" << endl;
-    socket->send(serialized_packet, TestMessage::getSize());
-
-    delete[] serialized_packet;
-    //delete socket;
+    //delete server_comm_socket;
 }
-
 
 void client() {
-    this_thread::sleep_for(chrono::seconds(2));
-    SocketManager client_socket("localhost", 5000);
     cout << "*CLIENT SIDE RUN*" << endl;
+    this_thread::sleep_for(chrono::seconds(0));
+    // Init client socket
+    SocketManager client_socket("localhost", 5000);
+    // Send a text message for test
+    sendTextMessage(client_socket);
+    this_thread::sleep_for(chrono::seconds(3));
+    // Receive a Generic message
+    receiveGenericMessage(client_socket);
 
-    uint8_t* msg = (uint8_t*)"test\0";
-    int msg_size = 5;
-
-    for (int i = 0; i < 3; ++i) {
-        cout << "SocketManagerTest - Client - Send message: " << msg << endl;
-        client_socket.send(msg, msg_size);
-    }
-    cout << endl;
-
-    uint8_t serialized_packet[TestMessage::getSize()];
-    client_socket.receive(serialized_packet, TestMessage::getSize());
-    TestMessage packet = TestMessage::deserialize(serialized_packet);
-    cout << "SocketManagerTest - Client - Message Received: " << endl;
-    packet.print();
 }
 
-
 int main() {
-    cout<< "*******************************\n"
-           "***** SOCKET MANAGER TEST *****\n"
-           "*******************************\n" << endl;
+    cout << "*******************************\n"
+            "***** SOCKET MANAGER TEST *****\n"
+            "*******************************\n" << endl;
 
     thread server_thread(server);
     thread client_thread(client);

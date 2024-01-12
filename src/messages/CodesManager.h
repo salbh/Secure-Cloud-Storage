@@ -4,13 +4,13 @@
 #include <cstdint>
 
 // Result of an operation
-enum class Result : int {
+enum class Result : uint8_t {
     ACK = 0,
     NACK = 1
 };
 
 // Type of message
-enum class Message : int {
+enum class Message : uint8_t {
     AUTHENTICATION_REQUEST = 2,
     UPLOAD_REQUEST = 3,
     UPLOAD_CHUNK = 4,
@@ -28,7 +28,7 @@ enum class Message : int {
 };
 
 // Error condition
-enum class Error : int {
+enum class Error : uint8_t {
     USERNAME_NOT_FOUND = 16,
     FILENAME_ALREADY_EXISTS = 17,
     FILENAME_NOT_FOUND = 18

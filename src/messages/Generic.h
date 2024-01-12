@@ -8,8 +8,6 @@
 class Generic {
 
 private:
-    Generic();
-
     unsigned char m_iv[Config::IV_LEN]{};
     unsigned char m_aad[Config::AAD_LEN]{};
     unsigned char m_tag[Config::AES_TAG_LEN]{};
@@ -17,6 +15,8 @@ private:
     int m_ciphertext_len{};
 
 public:
+    Generic();
+
     Generic(uint32_t counter);
 
     ~Generic();
@@ -31,7 +31,7 @@ public:
 
     static size_t getSize(int plaintext_len);
 
-
+    void print() const;
 };
 
 #endif //SECURE_CLOUD_STORAGE_GENERIC_H

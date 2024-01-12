@@ -8,8 +8,10 @@ class Config {
 
 public:
     static constexpr uint8_t FILE_NAME_LEN = 35;
-    static constexpr long MESSAGE_CODE_PACKET_SIZE = 71 * sizeof(uint8_t);
     static constexpr uint8_t USERNAME_LEN = 35;
+    // Longest packet (excluding chunks)
+    // Rename request: 35 B old filename + 35 B new filename + 1 B message code)
+    static constexpr long MAX_PACKET_SIZE = 71 * sizeof(uint8_t);
     static constexpr unsigned int AES_TAG_LEN = 16;
     static constexpr unsigned int AAD_LEN = 4;
     static constexpr unsigned int IV_LEN = 12;
