@@ -51,6 +51,9 @@ SocketManager::SocketManager(const string &server_ip, int server_port, int max_r
         cerr << "SocketManager - Error during socket creation!" << endl;
     }
 
+    // Set SO_REUSEADDR option to avoid binding errors
+    int opt = 1;
+    setsockopt(m_listening_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     //binding the socket to an address
     if (bind(m_listening_socket, (struct sockaddr *) &server_address, sizeof(server_address)) == -1) {
         cerr << "SocketManager - Error while binding socket!" << endl;
@@ -125,3 +128,8 @@ int SocketManager::accept() {
     return socket_descriptor;
 }
 
+void SocketManager::shutdown() {
+    if (::shutdown(m_socket, SHUT_RDWR) == -1) {
+        cerr << "SocketManager - Error during shutdown";
+    }
+}

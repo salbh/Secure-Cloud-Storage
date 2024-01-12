@@ -121,7 +121,7 @@ void testReadAndWriteChunks() {
     ifstream file1("test_2.txt", ios::binary);
     ifstream file2("test_2_copy.txt", ios::binary);
     assert(file1 && file2 && "Failed to open files for comparison");
-//     Compare file content
+    // Compare file content
     char ch1, ch2;
     while (file1.get(ch1) && file2.get(ch2)) {
         assert(ch1 == ch2);
