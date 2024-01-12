@@ -4,8 +4,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
-
 #include "SocketManager.h"
+
+SocketManager::SocketManager() = default;
 
 /**
  * Initializes and configures a socket.
@@ -114,7 +115,7 @@ int SocketManager::receive(uint8_t* message_buffer, int message_buffer_size) {
     }
 }
 
-int SocketManager::accept() {
+int SocketManager::accept() const {
     sockaddr_in client_address{};
     int client_address_size = sizeof(client_address);
     int socket_descriptor = ::accept(m_listening_socket, (struct sockaddr *) &client_address,
@@ -125,4 +126,3 @@ int SocketManager::accept() {
     }
     return socket_descriptor;
 }
-

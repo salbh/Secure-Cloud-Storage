@@ -5,19 +5,23 @@
 
 using namespace std;
 
+struct sockaddr_in;
+
 class SocketManager {
 
     int m_listening_socket;
     int m_socket;
 
 public:
+    SocketManager();
     SocketManager(const string& server_ip, int server_port, int max_request);
     SocketManager(const string& server_ip, int server_port);
     SocketManager(int socket_descriptor);
+
     ~SocketManager();
 
     int initSocket(const string &ip_address, int port, sockaddr_in& server_address, bool b);
-    int accept();
+    int accept() const;
     int send(uint8_t *message_buffer, int message_buffer_size);
     int receive(uint8_t *message_buffer, int message_buffer_size);
 };
