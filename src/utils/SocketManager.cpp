@@ -117,7 +117,7 @@ int SocketManager::receive(uint8_t *message_buffer, size_t message_buffer_size) 
     }
 }
 
-int SocketManager::accept() {
+int SocketManager::accept() const {
     sockaddr_in client_address{};
     int client_address_size = sizeof(client_address);
     int socket_descriptor = ::accept(m_listening_socket, (struct sockaddr *) &client_address,
