@@ -22,7 +22,9 @@ public:
 
     uint8_t *serialize();
 
-    SimpleMessage deserialize(uint8_t *message_buffer);
+    static SimpleMessage deserialize(uint8_t *message_buffer);
+
+    static size_t getSize();
 
     uint8_t getMessageCode() const;
 };

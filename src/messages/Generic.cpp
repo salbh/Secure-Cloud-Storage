@@ -3,6 +3,7 @@
 #include "Config.h"
 #include <cstring>
 #include <netinet/in.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -17,7 +18,7 @@ Generic::Generic() = default;
 Generic::Generic(uint32_t counter) {
     // Set AAD value in big endian format
     uint32_t counter_big_end = htonl(counter);
-    memcpy(m_aad, &counter_big_end, sizeof(counter_big_end));
+    memcpy(m_aad, &counter_big_end, Config::AAD_LEN);
 }
 
 /**
@@ -54,7 +55,7 @@ int Generic::encrypt(const unsigned char *session_key, unsigned char *plaintext,
  * @param plaintext The buffer to store the decrypted plaintext
  * @return The length of the decrypted plaintext or -1 if decryption fails
  */
-int Generic::decrypt(const unsigned char *session_key, unsigned char *plaintext) {
+int Generic::decrypt(const unsigned char *session_key, unsigned char *&plaintext) {
     AesGcm aesGcm(session_key);
     return aesGcm.decrypt(m_ciphertext, m_ciphertext_len,
                           m_aad, Config::AAD_LEN,
@@ -114,8 +115,8 @@ Generic Generic::deserialize(uint8_t *buffer, size_t ciphertext_len) {
 
     // Deserialize the ciphertext
     genericMessage.m_ciphertext_len = static_cast<int>(ciphertext_len);
-    genericMessage.m_ciphertext = new uint8_t[genericMessage.m_ciphertext_len];
-    memcpy(genericMessage.m_ciphertext, buffer + position, genericMessage.m_ciphertext_len);
+    genericMessage.m_ciphertext = new uint8_t[ciphertext_len];
+    memcpy(genericMessage.m_ciphertext, buffer + position, ciphertext_len);
 
     return genericMessage;
 }
@@ -125,7 +126,7 @@ Generic Generic::deserialize(uint8_t *buffer, size_t ciphertext_len) {
  * @param plaintext_len The length of the plaintext
  * @return The size of the Generic message
  */
-size_t Generic::getSize(int plaintext_len) {
+size_t Generic::getSize(size_t plaintext_len) {
     return Config::IV_LEN +
            Config::AAD_LEN +
            Config::AES_TAG_LEN +
@@ -135,31 +136,36 @@ size_t Generic::getSize(int plaintext_len) {
 /**
  * Print method to display the Generic message's fields
  */
-void Generic::print() const {
-    cout << "PACKET:" << endl;
+void Generic::print(size_t plaintext_len) const {
+    cout << "MESSAGE:" << endl;
+
     cout << "IV: ";
-    for (unsigned char i: m_iv) {
-        cout << i;
+    for (unsigned char i : m_iv) {
+        cout << hex << setw(2) << setfill('0') << static_cast<int>(i);
     }
     cout << endl;
 
     cout << "AAD: ";
-    for (unsigned char i: m_aad) {
-        cout << i;
+    for (unsigned char i : m_aad) {
+        cout << hex << setw(2) << setfill('0') << static_cast<int>(i);
     }
     cout << endl;
 
     cout << "TAG: ";
-    for (unsigned char i: m_tag) {
-        cout << i;
+    for (unsigned char i : m_tag) {
+        cout << hex << setw(2) << setfill('0') << static_cast<int>(i);
     }
     cout << endl;
 
-    for (int i = 0; i < 15; i++) {
-        cout << hex << static_cast<int>(m_ciphertext[i]);
+    cout << "Ciphertext: ";
+    for (int i = 0; i < plaintext_len; i++) {
+        cout << hex << setw(2) << setfill('0') << static_cast<int>(m_ciphertext[i]);
     }
     cout << dec << endl;
+
+    cout << "Ciphertext len: " << m_ciphertext_len << endl << endl;
 }
+
 
 
 

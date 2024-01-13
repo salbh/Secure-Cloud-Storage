@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <condition_variable>
 #include <cstring>
+#include <iomanip>
 #include "SocketManager.h"
 #include "Generic.h"
 #include "SimpleMessage.h"
@@ -26,7 +27,6 @@ bool g_testCompleted = false;
  */
 void sendTextMessage(SocketManager &socket) {
     uint8_t *msg = (uint8_t *) MSG;
-
     for (int i = 0; i < MSG_NUM; ++i) {
         {
             lock_guard<mutex> lock(g_mutex);
@@ -44,7 +44,6 @@ void sendTextMessage(SocketManager &socket) {
 void receiveTextMessage(SocketManager &socket) {
     for (int i = 0; i < MSG_NUM; ++i) {
         uint8_t msg[TEST_MSG_SIZE];
-
         socket.receive(msg, TEST_MSG_SIZE);
         {
             lock_guard<mutex> lock(g_mutex);
@@ -61,16 +60,40 @@ void receiveTextMessage(SocketManager &socket) {
  * @param socket The socket used to send the Generic message
  */
 void sendGenericMessage(SocketManager &socket) {
-    SimpleMessage simple_message(static_cast<uint8_t>(Result::NACK));
+    // Determine the size of the plaintext and ciphertext
+    size_t text_len = SimpleMessage::getSize();
+    // Create a SimpleMessage with NACK code
+    SimpleMessage simple_message(static_cast<uint8_t>(Result::ACK));
+    // Serialize the SimpleMessage to obtain a byte buffer
     uint8_t *serialized_message = simple_message.serialize();
+    {
+        lock_guard<mutex> lock(g_mutex);
+        // Print the plaintext obtained from serialization
+        cout << "SocketManagerTest - Server - Serialized plaintext: " << endl;
+        for (int i = 0; i < text_len; i++) {
+            cout << hex << setw(2) << setfill('0') << static_cast<int>(serialized_message[i]);
+        }
+        cout << dec << endl << endl;
+    }
+    // Create a Generic message with counter set to 1
     Generic generic_message(1);
+    // Encrypt the serialized SimpleMessage using a key
     const unsigned char key[] = "1234567890123456";
-    generic_message.encrypt(key, serialized_message, sizeof(uint8_t));
+    generic_message.encrypt(key, serialized_message, static_cast<int>(text_len));
+    // Serialize the Generic message, which now contains the encrypted SimpleMessage
     serialized_message = generic_message.serialize();
-    if (socket.send(serialized_message, Generic::getSize(sizeof(uint8_t))) == -1) {
+    {
+        lock_guard<mutex> lock(g_mutex);
+        cout << "SocketManagerTest - Server - Generic message (to send): " << endl;
+        generic_message.print(text_len);
+    }
+    // Send the serialized Generic message over the socket
+    if (socket.send(serialized_message,
+                    Generic::getSize(text_len)) == -1) {
         lock_guard<mutex> lock(g_mutex);
         cout << "SocketManagerTest - Server - Error in sending Generic message\n" << endl;
     }
+    // Free the allocated memory for the serialized message buffer
     delete[] serialized_message;
 }
 
@@ -79,23 +102,47 @@ void sendGenericMessage(SocketManager &socket) {
  * @param socket The socket used to receive the Generic message
  */
 void receiveGenericMessage(SocketManager &socket) {
-    size_t generic_message_size = Generic::getSize(sizeof(uint8_t));
+    // Determine the size of the plaintext and ciphertext
+    size_t text_len = SimpleMessage::getSize();
+    // Determine the expected size of the Generic message buffer
+    size_t generic_message_size = Generic::getSize(text_len);
+    // Allocate memory for the buffer to receive the Generic message
     uint8_t *serialized_message = new uint8_t[generic_message_size];
+    // Receive the Generic message from the server
     if (socket.receive(serialized_message, generic_message_size) == -1) {
         lock_guard<mutex> lock(g_mutex);
         cout << "SocketManagerTest - Client - Error in receiving Generic message\n" << endl;
     }
-    Generic generic_message = Generic::deserialize(serialized_message, generic_message_size);
-    delete[] serialized_message;
-    uint8_t *plaintext = new uint8_t[generic_message_size];
-    const unsigned char key[] = "1234567890123456";
-    generic_message.decrypt(key, plaintext);
-    SimpleMessage simple_message;
-    simple_message.deserialize(plaintext);
+    // Deserialize the received Generic message
+    Generic generic_message = Generic::deserialize(serialized_message, text_len);
     {
         lock_guard<mutex> lock(g_mutex);
-        cout << (int) simple_message.getMessageCode();
+        cout << "SocketManagerTest - Client - Generic message (received): " << endl;
+        generic_message.print(text_len);
     }
+    // Free the allocated memory for the received message buffer
+    delete[] serialized_message;
+    // Allocate memory for the plaintext buffer
+    uint8_t *plaintext = new uint8_t[text_len];
+    // Decrypt the Generic message to obtain the serialized SimpleMessage
+    const unsigned char key[] = "1234567890123456";
+    generic_message.decrypt(key, plaintext);
+    // Create a SimpleMessage object by deserializing the decrypted data
+    SimpleMessage simple_message = SimpleMessage::deserialize(plaintext);
+    {
+        lock_guard<mutex> lock(g_mutex);
+        // Print the plaintext obtained from decryption
+        cout << "SocketManagerTest - Client - Decrypted plaintext: " << endl;
+        for (int i = 0; i < text_len; i++) {
+            cout << hex << setw(2) << setfill('0') << static_cast<int>(plaintext[i]);
+        }
+        cout << dec << endl << endl;
+        // Output the message code of the received SimpleMessage
+        cout << "SocketManagerTest - Client - Received message code: " <<
+             (int) simple_message.getMessageCode() << endl;
+    }
+    // Free the allocated memory for the plaintext buffer
+    delete[] plaintext;
 }
 
 void server() {
@@ -143,20 +190,15 @@ void client() {
 }
 
 int main() {
-    {
-        lock_guard<mutex> lock(g_mutex);
-        cout << "*******************************\n"
-                "***** SOCKET MANAGER TEST *****\n"
-                "*******************************\n" << endl;
-    }
+    cout << "*******************************\n"
+            "***** SOCKET MANAGER TEST *****\n"
+            "*******************************\n" << endl;
     thread server_thread(server);
     thread client_thread(client);
 
     server_thread.join();
     client_thread.join();
-    {
-        lock_guard<mutex> lock(g_mutex);
-        cout << "\n+TEST PASSED+" << endl;
-    }
+
+    cout << "\n+TEST PASSED+" << endl;
     return 0;
 }

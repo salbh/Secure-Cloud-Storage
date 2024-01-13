@@ -68,3 +68,7 @@ SimpleMessage SimpleMessage::deserialize(uint8_t* message_buffer) {
     // Return the constructed Simple Message object with deserialized data
     return message;
 }
+
+size_t SimpleMessage::getSize() {
+    return Config::MAX_PACKET_SIZE;
+}

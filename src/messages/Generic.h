@@ -23,15 +23,15 @@ public:
 
     int encrypt(const unsigned char *session_key, unsigned char *plaintext, int plaintext_len);
 
-    int decrypt(const unsigned char *session_key, unsigned char *plaintext);
+    int decrypt(const unsigned char *session_key, unsigned char *&plaintext);
 
     uint8_t *serialize();
 
     static Generic deserialize(uint8_t *message_buffer, size_t ciphertext_len);
 
-    static size_t getSize(int plaintext_len);
+    static size_t getSize(size_t plaintext_len);
 
-    void print() const;
+    void print(size_t plaintext_len) const;
 };
 
 #endif //SECURE_CLOUD_STORAGE_GENERIC_H
