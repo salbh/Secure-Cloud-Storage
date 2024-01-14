@@ -26,7 +26,7 @@ bool g_testCompleted = false;
  * @param socket The socket used to send the text message
  */
 void sendTextMessage(SocketManager &socket) {
-    uint8_t *msg = (uint8_t *) MSG;
+    auto *msg = (uint8_t *) MSG;
     for (int i = 0; i < MSG_NUM; ++i) {
         {
             lock_guard<mutex> lock(g_mutex);
@@ -107,7 +107,7 @@ void receiveGenericMessage(SocketManager &socket) {
     // Determine the expected size of the Generic message buffer
     size_t generic_message_size = Generic::getSize(text_len);
     // Allocate memory for the buffer to receive the Generic message
-    uint8_t *serialized_message = new uint8_t[generic_message_size];
+    auto *serialized_message = new uint8_t[generic_message_size];
     // Receive the Generic message from the server
     if (socket.receive(serialized_message, generic_message_size) == -1) {
         lock_guard<mutex> lock(g_mutex);
@@ -123,7 +123,7 @@ void receiveGenericMessage(SocketManager &socket) {
     // Free the allocated memory for the received message buffer
     delete[] serialized_message;
     // Allocate memory for the plaintext buffer
-    uint8_t *plaintext = new uint8_t[text_len];
+    auto *plaintext = new uint8_t[text_len];
     // Decrypt the Generic message to obtain the serialized SimpleMessage
     const unsigned char key[] = "1234567890123456";
     generic_message.decrypt(key, plaintext);

@@ -13,6 +13,7 @@
  * @param ip_address IP address to bind the socket to.
  * @param port Port number to bind the socket to.
  * @param server_address Structure to hold server address information.
+ * @param isServer Flag indicating if the socket is for a server.
  *
  * @return The socket descriptor on success, or -1 on error.
  */
@@ -39,9 +40,9 @@ int SocketManager::initSocket(const string &ip_address, int port, sockaddr_in &s
 
 /**
  * Server socket constructor
- * @param server_ip ip of the server
- * @param server_port port of the server
- * @param max_requests max number of clients simultaneously waiting
+ * @param server_ip IP of the server
+ * @param server_port Port of the server
+ * @param max_requests Max number of clients simultaneously waiting
  */
 SocketManager::SocketManager(const string &server_ip, int server_port, int max_requests) {
     sockaddr_in server_address{};
@@ -67,8 +68,8 @@ SocketManager::SocketManager(const string &server_ip, int server_port, int max_r
 
 /**
  * Client socket constructor
- * @param server_ip ip of the server
- * @param server_port ip of the server
+ * @param server_ip IP of the server
+ * @param server_port Port of the server
  */
 SocketManager::SocketManager(const string &server_ip, int server_port) {
     sockaddr_in server_address{};
@@ -84,14 +85,30 @@ SocketManager::SocketManager(const string &server_ip, int server_port) {
     }
 }
 
+/**
+ * Constructor for creating a SocketManager instance from an existing socket descriptor.
+ *
+ * @param socket_descriptor The existing socket descriptor.
+ */
 SocketManager::SocketManager(int socket_descriptor) : m_socket(socket_descriptor) {
 }
 
+/**
+ * Destructor for the SocketManager class.
+ */
 SocketManager::~SocketManager() {
     close(m_socket);
     close(m_listening_socket);
 }
 
+/**
+ * Sends a message over the socket.
+ *
+ * @param message_buffer Pointer to the message buffer.
+ * @param message_buffer_size Size of the message buffer.
+ *
+ * @return 0 on success, -1 on error.
+ */
 int SocketManager::send(uint8_t *message_buffer, size_t message_buffer_size) {
     int result = ::send(m_socket, message_buffer, message_buffer_size, 0);
     if (result == -1) {
@@ -101,6 +118,14 @@ int SocketManager::send(uint8_t *message_buffer, size_t message_buffer_size) {
     return 0;
 }
 
+/**
+ * Receives a message from the socket.
+ *
+ * @param message_buffer Pointer to the message buffer.
+ * @param message_buffer_size Size of the message buffer.
+ *
+ * @return 0 on success, -1 on error.
+ */
 int SocketManager::receive(uint8_t *message_buffer, size_t message_buffer_size) {
     int result = recv(m_socket, message_buffer, message_buffer_size, MSG_WAITALL);
     if (result == 0) {
@@ -117,6 +142,11 @@ int SocketManager::receive(uint8_t *message_buffer, size_t message_buffer_size) 
     }
 }
 
+/**
+ * Accepts a connection request from a client.
+ *
+ * @return The socket descriptor for the accepted connection.
+ */
 int SocketManager::accept() const {
     sockaddr_in client_address{};
     int client_address_size = sizeof(client_address);

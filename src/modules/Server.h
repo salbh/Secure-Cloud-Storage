@@ -32,11 +32,9 @@ private:
 public:
     Server(SocketManager *socket);
 
-    Server(const Server &) = delete;
-
     ~Server();
 
-    int run();
+    void run();
 };
 
 
