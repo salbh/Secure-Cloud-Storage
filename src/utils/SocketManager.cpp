@@ -4,8 +4,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
-
 #include "SocketManager.h"
+
+SocketManager::SocketManager() = default;
 
 /**
  * Initializes and configures a socket.
@@ -157,4 +158,3 @@ int SocketManager::accept() const {
     }
     return socket_descriptor;
 }
-

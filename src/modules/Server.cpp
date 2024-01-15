@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Generic.h"
 #include "Server.h"
+
 #include "CodesManager.h"
 
 using namespace std;
@@ -111,4 +112,3 @@ void Server::run() {
         // To add checks on different errors thrown by the functions
     }
 }
-

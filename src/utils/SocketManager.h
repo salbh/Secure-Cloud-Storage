@@ -13,9 +13,11 @@ class SocketManager {
     int m_socket;
 
 public:
+    SocketManager();
     SocketManager(const string& server_ip, int server_port, int max_request);
     SocketManager(const string& server_ip, int server_port);
     SocketManager(int socket_descriptor);
+
     ~SocketManager();
 
     int initSocket(const string &ip_address, int port, sockaddr_in& server_address, bool b);
