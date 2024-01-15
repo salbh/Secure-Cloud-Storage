@@ -27,8 +27,8 @@ int Client::run() {
 
     // Check the username and password
     if(!FileManager::isStringValid(m_username) || !FileManager::isStringValid(password)) {
-        cerr << "Client - Invalid Username or Password!" << endl;
-        return 1;
+        cout << "Client - Invalid Username or Password!" << endl;
+        return -1;
     }
 
 
@@ -40,8 +40,8 @@ int Client::run() {
     BIO *bio = BIO_new_file(private_key_file.c_str(), "r");
     if (!bio) {
         // Handle error if the key file cannot be opened
-        cerr << "Client - Wrong Username!" << endl;
-        return 1;
+        cout << "Client - Wrong Username!" << endl;
+        return -1;
     }
 
     // Read the encrypted private key using the provided password
@@ -50,17 +50,18 @@ int Client::run() {
 
     // Check if the password is correct
     if (!m_long_term_private_key) {
-        cerr << "Client - Wrong password!" << endl;
-        return 1;
+        cout << "Client - Wrong password!" << endl;
+        return -1;
     }
 
     cout << "Client - Successful Authentication for " << m_username << endl;
+
 
     // Connect to the server
     try {
     SocketManager client_socket = SocketManager("localhost", 5000);
     } catch (const exception& e) {
-        cerr << "Client - Connection to the server failed" << endl;
+        cout << "Client - Connection to the server failed" << endl;
         return -1;
     }
 
@@ -70,7 +71,7 @@ int Client::run() {
 
     //OPERATIONS PHASE (enter the loop)
     try {
-        while (1) {
+        while (true) {
             // Display Operations Menu
             showMenu();
 
@@ -82,9 +83,11 @@ int Client::run() {
 
 
             // Check if the operation code format is valid
-            if (!FileManager::isStringValid(operation_code_string)){
-                cerr << "Client - Invalid operation code!" << endl;
-                return 1;
+            while (!FileManager::isStringValid(operation_code_string)) {
+                cout << "Client - Invalid operation code!\n" << endl;
+                showMenu();
+                cout << "Client - Insert operation code: ";
+                cin >> operation_code_string;
             }
 
             // Execute the operation selected
@@ -118,7 +121,7 @@ int Client::run() {
             }
         }
     } catch (int error) {
-        cerr << "Client - Error detected! " << error << endl;
+        cout << "Client - Error detected! " << error << endl;
     }
 
     return 0;

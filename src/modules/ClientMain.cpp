@@ -26,7 +26,7 @@ int main() {
     signal(SIGINT, handleSignal);
     signal(SIGPIPE, handleSignal);
 
-    while (1) {
+    while (true) {
         if (Client().run() == 1)
             break;
     }
