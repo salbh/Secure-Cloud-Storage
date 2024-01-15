@@ -15,11 +15,11 @@ public:
 
     ~ServerMain();
 
-    SocketManager getMSocketManager();
+    SocketManager *getMSocketManager() const;
 
     static void serverSignalHandler(int signal);
 
-    void emplaceThread(SocketManager* socket);
+    void emplaceThread(int socket_descriptor);
 };
 
 

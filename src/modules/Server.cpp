@@ -6,6 +6,8 @@
 
 using namespace std;
 
+int counter_instance = 1;
+
 Server::Server(SocketManager *socket) {
     m_socket = socket;
 }
@@ -111,5 +113,6 @@ void Server::run() {
 //    } catch (int error_code) {
 //        // To add checks on different errors thrown by the functions
 //    }
-    cout << "Server running!" << endl;
+    cout << "Server running instance: " << counter_instance << endl;
+    counter_instance++;
 }

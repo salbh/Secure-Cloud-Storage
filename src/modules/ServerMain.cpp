@@ -44,8 +44,8 @@ ServerMain::~ServerMain() {
  * @brief Getter for the SocketManager instance.
  * @return A reference to the SocketManager instance.
  */
-SocketManager ServerMain::getMSocketManager() {
-    return *m_socket_manager;
+SocketManager *ServerMain::getMSocketManager() const {
+    return m_socket_manager;
 }
 
 /**
@@ -69,8 +69,9 @@ void ServerMain::serverSignalHandler(int signal) {
  * @details Creates a new SocketManager instance for the client and pushes a new thread into the thread pool
  * to handle the client connection.
  */
-void ServerMain::emplaceThread(SocketManager* socket) {
+void ServerMain::emplaceThread(int socket_descriptor) {
 
+    auto* socket = new SocketManager(socket_descriptor);
     // Emplace a new thread into the thread pool
     m_thread_pool.emplace_back([](SocketManager* thread_socket) {
         Server(thread_socket).run();
@@ -94,13 +95,13 @@ int main() {
         // Enter the main server loop
         while (true) {
             // Accept a client connection
-            SocketManager* socket = server_main.getMSocketManager().accept();
-            if (socket == nullptr) {
+            int socket_descriptor = server_main.getMSocketManager()->accept();
+            if (socket_descriptor == -1) {
                 cout << "ServerMain - Error during connection with the client!" << endl;
                 continue;
             }
             // Push a new thread to handle the client connection
-            server_main.emplaceThread(socket);
+            server_main.emplaceThread(socket_descriptor);
 
         }
     } catch (int exit_code) {
