@@ -15,7 +15,8 @@ using namespace std;
 ServerMain::ServerMain(SocketManager *socket_manager) : m_socket_manager(socket_manager) {
     try {
         // Create a new SocketManager instance with specified configurations
-        m_socket_manager = new SocketManager(Config::SERVER_IP, Config::SERVER_PORT, Config::MAX_REQUESTS);
+        m_socket_manager = new SocketManager(Config::SERVER_IP, Config::SERVER_PORT,
+                                             Config::MAX_REQUESTS);
     } catch (const std::exception& e) {
         cerr << "Exception caught during SocketManager construction: " << e.what() << endl;
         throw EXIT_FAILURE;
