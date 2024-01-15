@@ -33,8 +33,8 @@ AuthenticationM1::AuthenticationM1(uint8_t* ephemeral_key, int ephemeral_key_len
  * @brief Get the total size of the AuthenticationM1 message.
  * @return The total size of the AuthenticationM1 message in bytes.
  */
-int AuthenticationM1::getMessageSize() {
-    int message_size = 0;
+size_t AuthenticationM1::getMessageSize() {
+    size_t message_size = 0;
 
     // Calculate the total size by summing the sizes of individual components
     message_size += EPHEMERAL_KEY_LEN * sizeof(uint8_t);

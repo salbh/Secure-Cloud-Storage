@@ -25,7 +25,7 @@ public:
     AuthenticationM1();
     AuthenticationM1(uint8_t* ephemeral_key, int ephemeral_key_len, const string& username);
 
-    int getMessageSize();
+    static size_t getMessageSize();
 
     uint8_t* serialize();
     AuthenticationM1 deserialize(uint8_t* message_buffer);
