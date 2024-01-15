@@ -19,7 +19,7 @@ public:
 
     static void serverSignalHandler(int signal);
 
-    void pushThread(int socket_descriptor);
+    void emplaceThread(int socket_descriptor);
 };
 
 

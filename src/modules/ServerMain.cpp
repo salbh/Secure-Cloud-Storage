@@ -3,6 +3,7 @@
 #include <csignal>
 #include "Config.h"
 #include "CertificateManager.h"
+#include "Server.h"
 
 using namespace std;
 
@@ -69,14 +70,13 @@ void ServerMain::serverSignalHandler(int signal) {
  * @details Creates a new SocketManager instance for the client and pushes a new thread into the thread pool
  * to handle the client connection.
  */
-void ServerMain::pushThread(int socket_descriptor) {
+void ServerMain::emplaceThread(int socket_descriptor) {
     // Create a new SocketManager instance for the client
     auto* socket = new SocketManager(socket_descriptor);
 
-    // Push a new thread into the thread pool
+    // Emplace a new thread into the thread pool
     m_thread_pool.emplace_back([](SocketManager* thread_socket) {
-        // Execute Server thread
-        // ...
+        Server(thread_socket).run();
     }, socket);
 }
 
@@ -106,7 +106,7 @@ int main() {
                 continue;
             } else {
                 // Push a new thread to handle the client connection
-                server_main.pushThread(socket_descriptor);
+                server_main.emplaceThread(socket_descriptor);
             }
         }
     } catch (int exit_code) {
