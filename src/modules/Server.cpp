@@ -50,7 +50,7 @@ void Server::run() {
     try {
         // Perform login
         if (login() != 0) {
-            cerr << "Server - Error! Login failed" << endl;
+            cout << "Server - Error! Login failed" << endl;
             return;
         }
         // Determine the expected size of the message buffer
@@ -59,7 +59,7 @@ void Server::run() {
             // Allocate memory for the buffer to receive the first message
             auto *serialized_message = new uint8_t[message_size];
             if (m_socket->receive(serialized_message, message_size) == -1) {
-                cerr << "Server - Error! Receive failed" << endl;
+                cout << "Server - Error! Receive failed" << endl;
                 return;
             }
             // Deserialize the received message
@@ -69,7 +69,7 @@ void Server::run() {
             auto *plaintext = new uint8_t[message_size];
             // Decrypt the received ciphertext
             if (generic_message.decrypt(m_session_key, plaintext) == -1) {
-                cerr << "Server - Error! Decryption failed" << endl;
+                cout << "Server - Error! Decryption failed" << endl;
                 return;
             }
             // Taking the command code as the first byte of plaintext
