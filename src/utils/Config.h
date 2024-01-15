@@ -21,6 +21,9 @@ public:
     static constexpr unsigned int AAD_LEN = 4;
     static constexpr unsigned int IV_LEN = 12;
     static constexpr long CHUNK_SIZE = 1024 * 1024; // 1 MB chunk size in bytes
+    static constexpr uint32_t MAX_COUNTER_VALUE = 0xffffffff;
+
+
 
 };
 
