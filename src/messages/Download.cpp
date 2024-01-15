@@ -27,7 +27,7 @@ DownloadM1::DownloadM1(const string& filename) {
  */
 uint8_t* DownloadM1::serializeDownloadM1() {
     // Allocate memory for the message buffer
-    uint8_t* message_buffer = new (nothrow) uint8_t[Config::MESSAGE_CODE_PACKET_SIZE];
+    uint8_t* message_buffer = new (nothrow) uint8_t[Config::MAX_PACKET_SIZE];
     // Check if memory allocation was successful
     if (!message_buffer) {
         cerr << "Download - Error during the serialization: Failed to allocate memory!" << endl;
@@ -42,7 +42,7 @@ uint8_t* DownloadM1::serializeDownloadM1() {
     current_buffer_position += Config::FILE_NAME_LEN * sizeof(char);
     // Generate random bytes to fill the remaining space in the buffer
     if (RAND_bytes(message_buffer + current_buffer_position,
-                   Config::MESSAGE_CODE_PACKET_SIZE - current_buffer_position) != 1) {
+                   Config::MAX_PACKET_SIZE - current_buffer_position) != 1) {
         cerr << "Download - Error during serialization: RAND_bytes failed!" << endl;
         delete[] message_buffer; // Release memory in case of failure
         return nullptr;

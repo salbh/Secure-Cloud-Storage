@@ -39,7 +39,7 @@ UploadM1::UploadM1(std::string&  filename, size_t file_size) {
  */
 uint8_t *UploadM1::serializeUploadM1() {
     // Dynamically allocate memory for a buffer to hold the serialized data.
-    uint8_t* upload_message_buffer = new uint8_t[Config::MESSAGE_CODE_PACKET_SIZE];
+    uint8_t* upload_message_buffer = new uint8_t[Config::MAX_PACKET_SIZE];
 
     // Initialize position variable to keep track of the current position in the buffer.
     size_t current_position = 0;
@@ -60,7 +60,7 @@ uint8_t *UploadM1::serializeUploadM1() {
     current_position += sizeof(uint32_t);
 
     // Add random bytes to the buffer to fill the remaining space.
-    RAND_bytes(upload_message_buffer + current_position, Config::MESSAGE_CODE_PACKET_SIZE - current_position);
+    RAND_bytes(upload_message_buffer + current_position, Config::MAX_PACKET_SIZE - current_position);
 
     // Return the dynamically allocated buffer containing the serialized data.
     return upload_message_buffer;

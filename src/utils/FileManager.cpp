@@ -197,6 +197,21 @@ bool FileManager::isStringValid(const string &input_string) {
     return true;
 }
 
-
+/**
+ * Check if a string is composed only by numbers
+ * @param input_string The string to be validated
+ * @return True if the string is valid, false otherwise
+ */
+bool isNumeric(const std::string& str) {
+    // Check each character in the string
+    for (char c : str) {
+        if (!isdigit(c)) {
+            // If a non-digit character is found, return false
+            return false;
+        }
+    }
+    // All characters are digits, return true
+    return true;
+}
 
 

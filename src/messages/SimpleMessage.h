@@ -17,13 +17,17 @@ private:
 
 public:
     SimpleMessage();
-    SimpleMessage(int message_code);
 
-    uint8_t *serializeSimpleMessage();
-    SimpleMessage deserializeSimpleMessage(uint8_t *message_buffer);
+    SimpleMessage(uint8_t message_code);
+
+    uint8_t *serialize();
+
+    static SimpleMessage deserialize(uint8_t *message_buffer);
+
+    static size_t getSize();
+
+    uint8_t getMessageCode() const;
 };
-
-
 
 
 #endif //SECURE_CLOUD_STORAGE_SIMPLEMESSAGE_H

@@ -5,6 +5,8 @@
 
 using namespace std;
 
+struct sockaddr_in;
+
 class SocketManager {
 
     int m_listening_socket;
@@ -17,9 +19,9 @@ public:
     ~SocketManager();
 
     int initSocket(const string &ip_address, int port, sockaddr_in& server_address, bool b);
-    int accept();
-    int send(uint8_t *message_buffer, int message_buffer_size);
-    int receive(uint8_t *message_buffer, int message_buffer_size);
+    int accept() const;
+    int send(uint8_t *message_buffer, size_t message_buffer_size);
+    int receive(uint8_t *message_buffer, size_t message_buffer_size);
 };
 
 

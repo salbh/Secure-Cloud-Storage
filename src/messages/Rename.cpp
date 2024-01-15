@@ -33,7 +33,7 @@ Rename::Rename(const string& old_filename, const string& new_filename) {
  */
 uint8_t* Rename::serializeRenameMessage() {
     // Allocate memory for the message buffer
-    uint8_t* message_buffer = new (nothrow) uint8_t[Config::MESSAGE_CODE_PACKET_SIZE];
+    uint8_t* message_buffer = new (nothrow) uint8_t[Config::MAX_PACKET_SIZE];
     // Check if memory allocation was successful
     if (!message_buffer) {
         cerr << "Rename - Error during the serialization: Failed to allocate memory!" << endl;
@@ -52,7 +52,7 @@ uint8_t* Rename::serializeRenameMessage() {
     current_buffer_position += Config::FILE_NAME_LEN * sizeof(char);
     // Generate random bytes to fill the remaining space in the buffer
     if (RAND_bytes(message_buffer + current_buffer_position,
-                   Config::MESSAGE_CODE_PACKET_SIZE - current_buffer_position) != 1) {
+                   Config::MAX_PACKET_SIZE - current_buffer_position) != 1) {
         cerr << "Rename - Error during serialization: RAND_bytes failed!" << endl;
         delete[] message_buffer; // Release memory in case of failure
         return nullptr;
