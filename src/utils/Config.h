@@ -8,7 +8,7 @@ class Config {
 
 public:
     static constexpr const char* SERVER_IP = "localhost";
-    static constexpr int SERVER_PORT = 6000;
+    static constexpr int SERVER_PORT = 5000;
     static constexpr int MAX_REQUESTS = 10;
 
     static constexpr uint8_t FILE_NAME_LEN = 35;

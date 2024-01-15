@@ -13,7 +13,7 @@ using namespace std;
  * @details Initializes the ServerMain with a SocketManager instance and sets up the necessary resources.
  * Throws an exception if construction fails.
  */
-ServerMain::ServerMain(SocketManager *socket_manager) : m_socket_manager(socket_manager) {
+ServerMain::ServerMain(){
     try {
         // Create a new SocketManager instance with specified configurations
         m_socket_manager = new SocketManager(Config::SERVER_IP, Config::SERVER_PORT,
@@ -31,7 +31,7 @@ ServerMain::ServerMain(SocketManager *socket_manager) : m_socket_manager(socket_
  */
 ServerMain::~ServerMain() {
     // Delete the SocketManager instance
-    delete m_socket_manager;
+    //delete m_socket_manager;
 
     // Delete the CertificateManager instance
     CertificateManager::deleteInstance();
@@ -45,7 +45,7 @@ ServerMain::~ServerMain() {
  * @brief Getter for the SocketManager instance.
  * @return A reference to the SocketManager instance.
  */
-SocketManager ServerMain::getMSocketManager() const {
+SocketManager ServerMain::getMSocketManager() {
     return *m_socket_manager;
 }
 
@@ -70,9 +70,9 @@ void ServerMain::serverSignalHandler(int signal) {
  * @details Creates a new SocketManager instance for the client and pushes a new thread into the thread pool
  * to handle the client connection.
  */
-void ServerMain::emplaceThread(int socket_descriptor) {
+void ServerMain::emplaceThread(SocketManager* socket) {
     // Create a new SocketManager instance for the client
-    auto* socket = new SocketManager(socket_descriptor);
+    //auto* socket = new SocketManager(socket_descriptor);
 
     // Emplace a new thread into the thread pool
     m_thread_pool.emplace_back([](SocketManager* thread_socket) {
@@ -90,24 +90,21 @@ int main() {
     std::signal(SIGINT, ServerMain::serverSignalHandler);
     std::signal(SIGPIPE, ServerMain::serverSignalHandler);
 
-    // Create a pointer to a SocketManager instance
-    SocketManager *socket_manager = nullptr;
-
     try {
         // Create a ServerMain instance with the SocketManager pointer
-        ServerMain server_main(socket_manager);
+        ServerMain server_main;
 
         // Enter the main server loop
         while (true) {
             // Accept a client connection and get the socket descriptor
-            int socket_descriptor = server_main.getMSocketManager().accept();
-            if (socket_descriptor == -1) {
+            SocketManager* socket = server_main.getMSocketManager().accept();
+            if (socket == nullptr) {
                 cout << "ServerMain - Error during connection with the client!" << endl;
                 continue;
-            } else {
-                // Push a new thread to handle the client connection
-                server_main.emplaceThread(socket_descriptor);
             }
+            // Push a new thread to handle the client connection
+            server_main.emplaceThread(socket);
+
         }
     } catch (int exit_code) {
         // Handle the exception from the constructor

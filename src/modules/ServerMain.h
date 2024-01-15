@@ -11,15 +11,15 @@ class ServerMain {
     vector<thread> m_thread_pool;
 
 public:
-    explicit ServerMain(SocketManager *socket_manager);
+    ServerMain();
 
     ~ServerMain();
 
-    SocketManager getMSocketManager() const;
+    SocketManager getMSocketManager();
 
     static void serverSignalHandler(int signal);
 
-    void emplaceThread(int socket_descriptor);
+    void emplaceThread(SocketManager* socket);
 };
 
 

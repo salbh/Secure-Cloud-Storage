@@ -54,8 +54,8 @@ SocketManager::SocketManager(const string &server_ip, int server_port, int max_r
     }
 
     // Set SO_REUSEADDR option to avoid binding errors
-    int opt = 1;
-    setsockopt(m_listening_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+//    int opt = 1;
+//    setsockopt(m_listening_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     //binding the socket to an address
     if (bind(m_listening_socket, (struct sockaddr *) &server_address, sizeof(server_address)) == -1) {
         cerr << "SocketManager - Error while binding socket!" << endl;
@@ -148,13 +148,10 @@ int SocketManager::receive(uint8_t *message_buffer, size_t message_buffer_size) 
  *
  * @return The socket descriptor for the accepted connection.
  */
-int SocketManager::accept() const {
+SocketManager* SocketManager::accept() {
     sockaddr_in client_address{};
     int client_address_size = sizeof(client_address);
     int socket_descriptor = ::accept(m_listening_socket, (struct sockaddr *) &client_address,
                                      (unsigned int *) &client_address_size);
-    if (socket_descriptor == -1) {
-        cerr << "SocketManager - Error during the connection request handling!" << endl;
-    }
-    return socket_descriptor;
+    return new SocketManager(socket_descriptor);
 }
