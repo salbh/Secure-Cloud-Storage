@@ -1,7 +1,5 @@
 #include <iostream>
-#include <cstring>
 #include <thread>
-#include <arpa/inet.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
@@ -59,7 +57,7 @@ int Client::run() {
 
     // Connect to the server
     try {
-    SocketManager client_socket = SocketManager("localhost", 5000);
+    SocketManager client_socket = SocketManager(Config::SERVER_IP, Config::SERVER_PORT);
     } catch (const exception& e) {
         cout << "Client - Connection to the server failed" << endl;
         return -1;
