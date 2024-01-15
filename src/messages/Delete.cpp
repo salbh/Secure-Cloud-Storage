@@ -30,7 +30,7 @@ Delete::Delete(const string& file_name) {
  */
 uint8_t* Delete::serialize() {
     // Allocate memory for the byte buffer
-    uint8_t* buffer = new (nothrow) uint8_t[Config::MESSAGE_CODE_PACKET_SIZE];
+    uint8_t* buffer = new (nothrow) uint8_t[Config::MAX_PACKET_SIZE];
     if (!buffer) {
         cerr << "Delete - Error during serialization: Failed to allocate memory" << endl;
         return nullptr;
@@ -46,7 +46,7 @@ uint8_t* Delete::serialize() {
     position += Config::FILE_NAME_LEN * sizeof(char);
 
     // Add randomness to the buffer using RAND_bytes
-    if (RAND_bytes(buffer + position, Config::MESSAGE_CODE_PACKET_SIZE - position) != 1) {
+    if (RAND_bytes(buffer + position, Config::MAX_PACKET_SIZE - position) != 1) {
         cerr << "Delete - Error during serialization: RAND_bytes failed" << endl;
         delete[] buffer; // Release memory in case of failure
         return nullptr;
