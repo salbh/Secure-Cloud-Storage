@@ -27,6 +27,12 @@ public:
 
     int run();
     void showMenu();
+
+    /**
+     * FRANCESCO: authentication() e rename()
+     * TOTORE: download() e list()
+     * LUCA: upload(), logout() e remove()
+     */
 };
 
 

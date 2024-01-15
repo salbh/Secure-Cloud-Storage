@@ -21,7 +21,7 @@ void Server::incrementCounter() {
 
 }
 
-int Server::login() {
+int Server::authentication() {
     return 0;
 }
 
