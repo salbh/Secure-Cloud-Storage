@@ -146,12 +146,15 @@ int SocketManager::receive(uint8_t *message_buffer, size_t message_buffer_size) 
 /**
  * Accepts a connection request from a client.
  *
- * @return The socket descriptor for the accepted connection.
+ * @return The a new socket with the socket descriptor returned by the accept() function.
  */
 SocketManager* SocketManager::accept() {
     sockaddr_in client_address{};
     int client_address_size = sizeof(client_address);
     int socket_descriptor = ::accept(m_listening_socket, (struct sockaddr *) &client_address,
                                      (unsigned int *) &client_address_size);
+    if(socket_descriptor == -1) {
+        return nullptr;
+    }
     return new SocketManager(socket_descriptor);
 }

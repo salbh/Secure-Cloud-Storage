@@ -9,7 +9,6 @@ using namespace std;
 
 /**
  * @brief Constructor for ServerMain class.
- * @param socket_manager A pointer to a SocketManager instance.
  * @details Initializes the ServerMain with a SocketManager instance and sets up the necessary resources.
  * Throws an exception if construction fails.
  */
@@ -71,8 +70,6 @@ void ServerMain::serverSignalHandler(int signal) {
  * to handle the client connection.
  */
 void ServerMain::emplaceThread(SocketManager* socket) {
-    // Create a new SocketManager instance for the client
-    //auto* socket = new SocketManager(socket_descriptor);
 
     // Emplace a new thread into the thread pool
     m_thread_pool.emplace_back([](SocketManager* thread_socket) {
@@ -91,12 +88,12 @@ int main() {
     std::signal(SIGPIPE, ServerMain::serverSignalHandler);
 
     try {
-        // Create a ServerMain instance with the SocketManager pointer
+        // Create a ServerMain instance
         ServerMain server_main;
 
         // Enter the main server loop
         while (true) {
-            // Accept a client connection and get the socket descriptor
+            // Accept a client connection
             SocketManager* socket = server_main.getMSocketManager().accept();
             if (socket == nullptr) {
                 cout << "ServerMain - Error during connection with the client!" << endl;
