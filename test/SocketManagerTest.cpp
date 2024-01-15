@@ -79,7 +79,11 @@ void sendGenericMessage(SocketManager &socket) {
     Generic generic_message(1);
     // Encrypt the serialized SimpleMessage using a key
     const unsigned char key[] = "1234567890123456";
-    generic_message.encrypt(key, serialized_message, static_cast<int>(text_len));
+    if (generic_message.encrypt(key, serialized_message,
+                                static_cast<int>(text_len)) == -1) {
+        cout << "SocketManagerTest - Server - Error during encryption" << endl;
+        return;
+    }
     // Serialize the Generic message, which now contains the encrypted SimpleMessage
     serialized_message = generic_message.serialize();
     {
@@ -126,7 +130,10 @@ void receiveGenericMessage(SocketManager &socket) {
     auto *plaintext = new uint8_t[text_len];
     // Decrypt the Generic message to obtain the serialized SimpleMessage
     const unsigned char key[] = "1234567890123456";
-    generic_message.decrypt(key, plaintext);
+    if (generic_message.decrypt(key, plaintext) == -1) {
+        cout << "SocketManagerTest - Client - Error during decryption" << endl;
+        return;
+    }
     // Create a SimpleMessage object by deserializing the decrypted data
     SimpleMessage simple_message = SimpleMessage::deserialize(plaintext);
     {

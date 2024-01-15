@@ -53,10 +53,9 @@ void Server::run() {
             cerr << "Server - Error! Login failed" << endl;
             return;
         }
-
+        // Determine the expected size of the message buffer
+        size_t message_size = Generic::getSize(Config::MAX_PACKET_SIZE);
         while (true) {
-            // Determine the expected size of the message buffer
-            size_t message_size = Generic::getSize(Config::MAX_PACKET_SIZE);
             // Allocate memory for the buffer to receive the first message
             auto *serialized_message = new uint8_t[message_size];
             if (m_socket->receive(serialized_message, message_size) == -1) {
@@ -69,7 +68,10 @@ void Server::run() {
             // Allocate memory for the plaintext
             auto *plaintext = new uint8_t[message_size];
             // Decrypt the received ciphertext
-            generic_message.decrypt(m_session_key, plaintext);
+            if (generic_message.decrypt(m_session_key, plaintext) == -1) {
+                cerr << "Server - Error! Decryption failed" << endl;
+                return;
+            }
             // Taking the command code as the first byte of plaintext
             uint8_t command = plaintext[0];
 
@@ -103,7 +105,7 @@ void Server::run() {
                     break;
             }
         }
-    } catch (const std::exception &e) {
+    } catch (const exception &e) {
         cerr << "Server - Exception in run: " << e.what() << endl;
     } catch (int error_code) {
         // To add checks on different errors thrown by the functions
