@@ -41,10 +41,10 @@ void sendTextMessage(SocketManager &socket) {
  * Function to receive a text message (executed by the Server)
  * @param socket The socket used to receive the text message
  */
-void receiveTextMessage(SocketManager &socket) {
+void receiveTextMessage(SocketManager *socket) {
     for (int i = 0; i < MSG_NUM; ++i) {
         uint8_t msg[TEST_MSG_SIZE];
-        socket.receive(msg, TEST_MSG_SIZE);
+        socket->receive(msg, TEST_MSG_SIZE);
         {
             lock_guard<mutex> lock(g_mutex);
             cout << "SocketManagerTest - Server - Test Message Received: " << msg << endl;
@@ -59,7 +59,7 @@ void receiveTextMessage(SocketManager &socket) {
  * Function to send a Generic message with an ACK (executed by the Server)
  * @param socket The socket used to send the Generic message
  */
-void sendGenericMessage(SocketManager &socket) {
+void sendGenericMessage(SocketManager *socket) {
     // Determine the size of the plaintext and ciphertext
     size_t text_len = SimpleMessage::getSize();
     // Create a SimpleMessage with NACK code
@@ -92,7 +92,7 @@ void sendGenericMessage(SocketManager &socket) {
         generic_message.print(text_len);
     }
     // Send the serialized Generic message over the socket
-    if (socket.send(serialized_message,
+    if (socket->send(serialized_message,
                     Generic::getSize(text_len)) == -1) {
         lock_guard<mutex> lock(g_mutex);
         cout << "SocketManagerTest - Server - Error in sending Generic message\n" << endl;
@@ -159,13 +159,11 @@ void server() {
     }
     // Init Server listening socket
     SocketManager server_socket("localhost", 5000, 10);
-    int server_socket_descriptor = server_socket.accept();
-    if (server_socket_descriptor == -1) {
+    SocketManager* server_comm_socket = server_socket.accept();
+    if (server_comm_socket == nullptr) {
         lock_guard<mutex> lock(g_mutex);
         cout << "SocketManagerTest - Error on accept function" << endl;
     } else {
-        // Init Server communication socket
-        SocketManager server_comm_socket(server_socket_descriptor);
         // Receive a text message for test
         receiveTextMessage(server_comm_socket);
         // Send a Generic message
