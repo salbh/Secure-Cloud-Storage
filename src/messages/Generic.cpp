@@ -35,7 +35,7 @@ Generic::~Generic() {
  * @param plaintext_len The length of the plaintext
  * @return The length of the ciphertext or -1 if encryption fails
  */
-int Generic::encrypt(const unsigned char *session_key, unsigned char *plaintext, int plaintext_len) {
+int Generic::encrypt(unsigned char *session_key, unsigned char *plaintext, int plaintext_len) {
     // Plaintext Encryption (generates ciphertext and tag)
     AesGcm aesGcm(session_key);
     m_ciphertext_len = aesGcm.encrypt(plaintext, plaintext_len, m_aad,
@@ -55,7 +55,7 @@ int Generic::encrypt(const unsigned char *session_key, unsigned char *plaintext,
  * @param plaintext The buffer to store the decrypted plaintext
  * @return The length of the decrypted plaintext or -1 if decryption fails
  */
-int Generic::decrypt(const unsigned char *session_key, unsigned char *&plaintext) {
+int Generic::decrypt(unsigned char *session_key, unsigned char *&plaintext) {
     AesGcm aesGcm(session_key);
     return aesGcm.decrypt(m_ciphertext, m_ciphertext_len,
                           m_aad, Config::AAD_LEN,

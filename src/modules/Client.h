@@ -16,10 +16,10 @@
 class Client {
 
     string m_username;
-    SocketManager* m_socket;
-    EVP_PKEY* m_long_term_private_key;
-    unsigned char m_session_key;
     uint32_t m_counter;
+    SocketManager *m_socket;
+    unsigned char *m_session_key;
+    EVP_PKEY* m_long_term_private_key;
 
     void incrementCounter();
 

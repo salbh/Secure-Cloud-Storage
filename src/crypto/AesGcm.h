@@ -9,16 +9,16 @@ class AesGcm {
 
 private:
     const EVP_CIPHER *m_cipher;
-    EVP_CIPHER_CTX *m_ctx;
+    EVP_CIPHER_CTX *m_ctx{};
     unsigned char *m_key;
     int m_key_len;
     int m_iv_len;
-    unsigned char *m_ciphertext;
-    unsigned char *m_plaintext;
-    unsigned char *m_iv;
+    unsigned char *m_ciphertext{};
+    unsigned char *m_plaintext{};
+    unsigned char *m_iv{};
 
 public:
-    AesGcm(const unsigned char *key);
+    explicit AesGcm(unsigned char *key);
 
     ~AesGcm();
 

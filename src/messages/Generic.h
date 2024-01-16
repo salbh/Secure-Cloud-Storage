@@ -21,9 +21,9 @@ public:
 
     ~Generic();
 
-    int encrypt(const unsigned char *session_key, unsigned char *plaintext, int plaintext_len);
+    int encrypt(unsigned char *session_key, unsigned char *plaintext, int plaintext_len);
 
-    int decrypt(const unsigned char *session_key, unsigned char *&plaintext);
+    int decrypt(unsigned char *session_key, unsigned char *&plaintext);
 
     uint8_t *serialize();
 

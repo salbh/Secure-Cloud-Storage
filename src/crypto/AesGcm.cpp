@@ -9,7 +9,7 @@ using namespace std;
  * Constructor for AesGcm class
  * @param key The encryption key
  */
-AesGcm::AesGcm(const unsigned char *key) {
+AesGcm::AesGcm(unsigned char *key) {
     // Set the cipher to AES-128 GCM
     m_cipher = EVP_aes_128_gcm();
     // Get IV length for the cipher

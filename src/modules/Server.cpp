@@ -1,7 +1,7 @@
 #include <iostream>
+
 #include "Generic.h"
 #include "Server.h"
-
 #include "CodesManager.h"
 
 using namespace std;

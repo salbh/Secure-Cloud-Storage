@@ -131,7 +131,7 @@ void testEncryptionAndDecryption(AesGcm &aesGcm, const char *plaintext, int plai
 }
 
 int main() {
-    const unsigned char key[] = "0123456789abcdef";
+    unsigned char key[] = "0123456789abcdef";
     AesGcm aesGcm = AesGcm(key);
 
     const char *plaintext;
