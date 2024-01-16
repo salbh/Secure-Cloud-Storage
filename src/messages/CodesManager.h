@@ -34,4 +34,9 @@ enum class Error : int {
     FILENAME_NOT_FOUND = 18
 };
 
+enum class Return : int {
+    LOGIN_SUCCESS = 19,
+    LOGIN_FAILURE
+};
+
 #endif //SECURE_CLOUD_STORAGE_CODESMANAGER_H

@@ -6,6 +6,7 @@
 #include "SocketManager.h"
 #include "Client.h"
 #include "FileManager.h"
+#include "CodesManager.h"
 
 
 Client::Client() =default;
@@ -14,6 +15,9 @@ Client::~Client() {
 
 }
 
+int Client::authentication() {
+    return 0;
+}
 
 int Client::run() {
     //LOGIN PHASE
@@ -125,6 +129,17 @@ int Client::run() {
     return 0;
 }
 
+void Client::incrementCounter() {
+    // Check if re-authentication is needed
+    if (m_counter == Config::MAX_COUNTER_VALUE) {
+        if (authentication() != static_cast<int>(Return::LOGIN_SUCCESS)) {
+            throw static_cast<int>(Return::LOGIN_FAILURE);
+        }
+        m_counter = 0;
+    } else {
+        m_counter++;
+    }
+}
 
 /**
  * Displays the Operation Menu options

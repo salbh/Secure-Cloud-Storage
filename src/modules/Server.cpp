@@ -20,9 +20,8 @@ Server::~Server() {
 void Server::incrementCounter() {
     // Check if re-authentication is needed
     if (m_counter == Config::MAX_COUNTER_VALUE) {
-        int res = authentication();
-        if (res != 0) {
-            throw runtime_error("Login request failed during renegotiation");
+        if (authentication() != static_cast<int>(Return::LOGIN_SUCCESS)) {
+            throw static_cast<int>(Return::LOGIN_FAILURE);
         }
         m_counter = 0;
     } else {

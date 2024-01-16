@@ -21,6 +21,8 @@ class Client {
     unsigned char m_session_key;
     uint32_t m_counter;
 
+    void incrementCounter();
+
 public:
     Client();
     ~Client();
@@ -33,6 +35,7 @@ public:
      * TOTORE: download() e list()
      * LUCA: upload(), logout() e remove()
      */
+    int authentication();
 };
 
 
