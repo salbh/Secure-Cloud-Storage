@@ -24,7 +24,7 @@ public:
 
     static SimpleMessage deserialize(uint8_t *message_buffer);
 
-    static size_t getSize();
+    static size_t getMessageSize();
 
     uint8_t getMessageCode() const;
 };

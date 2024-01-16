@@ -16,8 +16,8 @@ public:
     DownloadM1();
     DownloadM1(const string& filename);
 
-    uint8_t* serializeDownloadM1();
-    DownloadM1 deserializeDownloadM1(uint8_t* message_buffer);
+    uint8_t* serialize();
+    DownloadM1 deserialize(uint8_t* message_buffer);
 };
 
 class DownloadM2 {
@@ -28,8 +28,8 @@ private:
 public:
     DownloadM2(const size_t& file_size);
 
-    uint8_t* serializeDownloadM2();
-    DownloadM2 deserializeDownloadM2(uint8_t* message_buffer, const size_t& file_size);
+    uint8_t* serialize();
+    DownloadM2 deserialize(uint8_t* message_buffer, const size_t& file_size);
 };
 
 class DownloadMi {
@@ -42,9 +42,9 @@ public:
     DownloadMi(int file_chunk_size);
     ~DownloadMi();
 
-    uint8_t *serializeDownloadMi(int file_chunk_size);
-    DownloadMi deserializeDownloadMi(uint8_t* message_buffer, int file_chunk_size);
-    size_t getSizeDownloadMi(int file_chunk_size);
+    uint8_t *serialize(int file_chunk_size);
+    DownloadMi deserialize(uint8_t* message_buffer, int file_chunk_size);
+    size_t getMessageSize(int file_chunk_size);
 
 };
 

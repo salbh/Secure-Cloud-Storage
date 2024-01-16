@@ -29,7 +29,7 @@ public:
 
     static Generic deserialize(uint8_t *message_buffer, size_t ciphertext_len);
 
-    static size_t getSize(size_t plaintext_len);
+    static size_t getMessageSize(size_t plaintext_len);
 
     void print(size_t plaintext_len) const;
 };

@@ -25,7 +25,7 @@ DownloadM1::DownloadM1(const string& filename) {
  * @brief Serialize the Download M1 message.
  * @return A dynamically allocated buffer containing the serialized message.
  */
-uint8_t* DownloadM1::serializeDownloadM1() {
+uint8_t* DownloadM1::serialize() {
     // Allocate memory for the message buffer
     uint8_t* message_buffer = new (nothrow) uint8_t[Config::MAX_PACKET_SIZE];
     // Check if memory allocation was successful
@@ -56,7 +56,7 @@ uint8_t* DownloadM1::serializeDownloadM1() {
  * @param message_buffer The buffer containing the serialized message.
  * @return A Download object representing the deserialized message.
  */
-DownloadM1 DownloadM1::deserializeDownloadM1(uint8_t* message_buffer) {
+DownloadM1 DownloadM1::deserialize(uint8_t* message_buffer) {
     // Create a Download object to store the deserialized message
     DownloadM1 downloadMessage;
 
@@ -87,7 +87,7 @@ DownloadM2::DownloadM2(const size_t& file_size) {
  * @brief Serialize the Download M2 message.
  * @return A dynamically allocated buffer containing the serialized message.
  */
-uint8_t* DownloadM2::serializeDownloadM2() {
+uint8_t* DownloadM2::serialize() {
     // Allocate memory for the message buffer
     uint8_t* message_buffer = new (nothrow) uint8_t[sizeof(uint8_t) + sizeof(uint32_t)];
     // Check if memory allocation was successful
@@ -112,7 +112,7 @@ uint8_t* DownloadM2::serializeDownloadM2() {
  * @param file_size The size of the file being acknowledged.
  * @return A Download object representing the deserialized message.
  */
-DownloadM2 DownloadM2::deserializeDownloadM2(uint8_t* message_buffer, const size_t& file_size) {
+DownloadM2 DownloadM2::deserialize(uint8_t* message_buffer, const size_t& file_size) {
     // Create a DownloadM2 object to store the deserialized message
     DownloadM2 downloadM2(file_size);
 
@@ -162,7 +162,7 @@ DownloadMi::~DownloadMi() {
  * @param file_chunk_size The size of the file chunk data.
  * @return A dynamically allocated buffer containing the serialized message.
  */
-uint8_t* DownloadMi::serializeDownloadMi(int file_chunk_size) {
+uint8_t* DownloadMi::serialize(int file_chunk_size) {
     // Allocate memory for the message buffer
     uint8_t* message_buffer = new (nothrow) uint8_t[sizeof(uint8_t) + file_chunk_size * sizeof(uint8_t)];
     // Check if memory allocation was successful
@@ -187,7 +187,7 @@ uint8_t* DownloadMi::serializeDownloadMi(int file_chunk_size) {
  * @param file_chunk_size The size of the file chunk data.
  * @return A Download object representing the deserialized message.
  */
-DownloadMi DownloadMi::deserializeDownloadMi(uint8_t* message_buffer, int file_chunk_size) {
+DownloadMi DownloadMi::deserialize(uint8_t* message_buffer, int file_chunk_size) {
     // Create a Download object to store the deserialized message
     DownloadMi downloadMi(file_chunk_size);
 

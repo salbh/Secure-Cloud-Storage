@@ -126,7 +126,7 @@ Generic Generic::deserialize(uint8_t *buffer, size_t ciphertext_len) {
  * @param plaintext_len The length of the plaintext
  * @return The size of the Generic message
  */
-size_t Generic::getSize(size_t plaintext_len) {
+size_t Generic::getMessageSize(size_t plaintext_len) {
     return Config::IV_LEN +
            Config::AAD_LEN +
            Config::AES_TAG_LEN +

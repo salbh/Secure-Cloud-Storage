@@ -20,9 +20,9 @@ public:
 
     uint8_t *serialize();
 
-    Delete deserialize(uint8_t *buffer);
+    static Delete deserialize(uint8_t *buffer);
 
-    size_t getSize() const;
+    static size_t getMessageSize();
 
 };
 

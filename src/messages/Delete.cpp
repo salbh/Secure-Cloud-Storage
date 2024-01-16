@@ -79,7 +79,7 @@ Delete Delete::deserialize(uint8_t* buffer) {
  * Get the size of the Delete message in bytes
  * @return The size of the Delete message
  */
-size_t Delete::getSize() const {
+size_t Delete::getMessageSize() {
     return sizeof(m_message_code) +
             sizeof(char) * Config::FILE_NAME_LEN;
 }

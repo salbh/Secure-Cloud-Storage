@@ -61,7 +61,7 @@ void receiveTextMessage(SocketManager &socket) {
  */
 void sendGenericMessage(SocketManager &socket) {
     // Determine the size of the plaintext and ciphertext
-    size_t text_len = SimpleMessage::getSize();
+    size_t text_len = SimpleMessage::getMessageSize();
     // Create a SimpleMessage with NACK code
     SimpleMessage simple_message(static_cast<uint8_t>(Result::ACK));
     // Serialize the SimpleMessage to obtain a byte buffer
@@ -93,7 +93,7 @@ void sendGenericMessage(SocketManager &socket) {
     }
     // Send the serialized Generic message over the socket
     if (socket.send(serialized_message,
-                    Generic::getSize(text_len)) == -1) {
+                    Generic::getMessageSize(text_len)) == -1) {
         lock_guard<mutex> lock(g_mutex);
         cout << "SocketManagerTest - Server - Error in sending Generic message\n" << endl;
     }
@@ -107,9 +107,9 @@ void sendGenericMessage(SocketManager &socket) {
  */
 void receiveGenericMessage(SocketManager &socket) {
     // Determine the size of the plaintext and ciphertext
-    size_t text_len = SimpleMessage::getSize();
+    size_t text_len = SimpleMessage::getMessageSize();
     // Determine the expected size of the Generic message buffer
-    size_t generic_message_size = Generic::getSize(text_len);
+    size_t generic_message_size = Generic::getMessageSize(text_len);
     // Allocate memory for the buffer to receive the Generic message
     auto *serialized_message = new uint8_t[generic_message_size];
     // Receive the Generic message from the server

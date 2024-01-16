@@ -65,7 +65,7 @@ void Server::run() {
 //            return;
 //        }
 //        // Determine the expected size of the message buffer
-//        size_t message_size = Generic::getSize(Config::MAX_PACKET_SIZE);
+//        size_t message_size = Generic::getMessageSize(Config::MAX_PACKET_SIZE);
 //        while (true) {
 //            // Allocate memory for the buffer to receive the first message
 //            auto *serialized_message = new uint8_t[message_size];

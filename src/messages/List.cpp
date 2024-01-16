@@ -26,7 +26,7 @@ ListM2::ListM2(uint32_t listSize) {
  */
 uint8_t *ListM2::serialize() {
     // Serialize ListM2 message into a byte buffer
-    uint8_t *buffer = new(nothrow) uint8_t[ListM2::getSize()];
+    uint8_t *buffer = new(nothrow) uint8_t[ListM2::getMessageSize()];
     if (!buffer) {
         cerr << "ListM2 - Error during serialization: Failed to allocate memory" << endl;
         return nullptr;
@@ -63,7 +63,7 @@ ListM2 ListM2::deserialize(uint8_t *buffer) {
  * Get the size of the ListM2 message in bytes
  * @return The size of the ListM2 message
  */
-size_t ListM2::getSize() const {
+size_t ListM2::getMessageSize() const {
     return sizeof(m_message_code) +
            sizeof(m_list_size);
 }
@@ -100,7 +100,7 @@ ListM3::~ListM3() {
  * @return A dynamically allocated byte buffer containing the serialized message
  */
 uint8_t *ListM3::serialize() {
-    uint8_t *buffer = new(nothrow) uint8_t[ListM3::getSize()];
+    uint8_t *buffer = new(nothrow) uint8_t[ListM3::getMessageSize()];
     if (!buffer) {
         cerr << "ListM3 - Error during serialization: Failed to allocate memory" << endl;
         return nullptr;
@@ -144,7 +144,7 @@ ListM3 ListM3::deserialize(uint8_t *buffer, int buffer_len) {
  * Get the size of the ListM3 message in bytes
  * @return The size of the ListM3 message
  */
-size_t ListM3::getSize() const {
+size_t ListM3::getMessageSize() const {
     // Sum of the message code size
     // plus the size of the list of files in bytes
     return sizeof(m_message_code) +
