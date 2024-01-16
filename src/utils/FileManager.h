@@ -41,6 +41,8 @@ public:
 
     static bool isStringValid(const string &input_string);
 
+    static bool isNumeric(const string& str);
+
 private:
     OpenMode m_open_mode;
     ifstream m_in_file;

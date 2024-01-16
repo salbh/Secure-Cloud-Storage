@@ -9,7 +9,7 @@
 #include "CodesManager.h"
 
 
-Client::Client() =default;
+Client::Client() = default;
 
 Client::~Client() {
 
@@ -28,7 +28,7 @@ int Client::run() {
     cin >> password;
 
     // Check the username and password
-    if(!FileManager::isStringValid(m_username) || !FileManager::isStringValid(password)) {
+    if (!FileManager::isStringValid(m_username) || !FileManager::isStringValid(password)) {
         cout << "Client - Invalid Username or Password!" << endl;
         return -1;
     }
@@ -61,8 +61,8 @@ int Client::run() {
 
     // Connect to the server
     try {
-    SocketManager client_socket = SocketManager(Config::SERVER_IP, Config::SERVER_PORT);
-    } catch (const exception& e) {
+        SocketManager client_socket = SocketManager(Config::SERVER_IP, Config::SERVER_PORT);
+    } catch (const exception &e) {
         cout << "Client - Connection to the server failed" << endl;
         return -1;
     }
@@ -85,7 +85,7 @@ int Client::run() {
 
 
             // Check if the operation code format is valid
-            while (!FileManager::isStringValid(operation_code_string)) {
+            while (!FileManager::isNumeric(operation_code_string)) {
                 cout << "Client - Invalid operation code!\n" << endl;
                 showMenu();
                 cout << "Client - Insert operation code: ";

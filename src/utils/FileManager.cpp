@@ -202,7 +202,7 @@ bool FileManager::isStringValid(const string &input_string) {
  * @param input_string The string to be validated
  * @return True if the string is valid, false otherwise
  */
-bool isNumeric(const std::string& str) {
+bool FileManager::isNumeric(const string& str) {
     // Check each character in the string
     for (char c : str) {
         if (!isdigit(c)) {
