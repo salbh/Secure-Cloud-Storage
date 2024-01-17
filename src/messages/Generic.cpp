@@ -134,6 +134,17 @@ size_t Generic::getMessageSize(size_t plaintext_len) {
 }
 
 /**
+ * Retrieve the counter value from the AAD field of the Generic message.
+ * The counter value is converted from network byte order to host byte order.
+ * @return The counter value in host byte order.
+ */
+uint32_t Generic::getCounter() const {
+    uint32_t counter;
+    memcpy(&counter, m_aad, Config::AAD_LEN);
+    return ntohl(counter); // Convert from network byte order to host byte order
+}
+
+/**
  * Print method to display the Generic message's fields
  */
 void Generic::print(size_t plaintext_len) const {

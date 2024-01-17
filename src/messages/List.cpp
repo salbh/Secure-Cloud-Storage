@@ -1,7 +1,9 @@
-#include "List.h"
-#include "CodesManager.h"
 #include <cstring>
 #include <iostream>
+#include "List.h"
+#include "CodesManager.h"
+#include "Config.h"
+#include <openssl/rand.h>
 
 using namespace std;
 
@@ -26,7 +28,7 @@ ListM2::ListM2(uint32_t listSize) {
  */
 uint8_t *ListM2::serialize() {
     // Serialize ListM2 message into a byte buffer
-    uint8_t *buffer = new(nothrow) uint8_t[ListM2::getMessageSize()];
+    auto *buffer = new(nothrow) uint8_t[Config::MAX_PACKET_SIZE];
     if (!buffer) {
         cerr << "ListM2 - Error during serialization: Failed to allocate memory" << endl;
         return nullptr;
@@ -37,6 +39,14 @@ uint8_t *ListM2::serialize() {
     position += sizeof(m_message_code);
 
     memcpy(buffer + position, &m_list_size, sizeof(m_list_size));
+    position += sizeof(m_list_size);
+
+    // Add randomness to the buffer using RAND_bytes
+    if (RAND_bytes(buffer + position, Config::MAX_PACKET_SIZE - position) != 1) {
+        cerr << "Delete - Error during serialization: RAND_bytes failed" << endl;
+        delete[] buffer; // Release memory in case of failure
+        return nullptr;
+    }
 
     return buffer;
 }
@@ -63,11 +73,18 @@ ListM2 ListM2::deserialize(uint8_t *buffer) {
  * Get the size of the ListM2 message in bytes
  * @return The size of the ListM2 message
  */
-size_t ListM2::getMessageSize() const {
+size_t ListM2::getMessageSize() {
     return sizeof(m_message_code) +
            sizeof(m_list_size);
 }
 
+uint8_t ListM2::getMessageCode() const {
+    return m_message_code;
+}
+
+uint32_t ListM2::getListSize() const {
+    return m_list_size;
+}
 
 // ListM3 Message
 
@@ -81,10 +98,9 @@ ListM3::ListM3() = default;
  */
 ListM3::ListM3(uint32_t list_size, uint8_t *file_list) {
     m_message_code = static_cast<uint8_t>(Message::LIST_RESPONSE);
-    m_list_size = list_size;
-    if (m_list_size > 0) {
-        m_file_list = new uint8_t[m_list_size];
-        memcpy(m_file_list, file_list, m_list_size);
+    if (list_size > 0) {
+        m_file_list = new uint8_t[list_size];
+        memcpy(m_file_list, file_list, list_size);
     }
 }
 
@@ -99,21 +115,28 @@ ListM3::~ListM3() {
  * Serialize ListM3 message into a byte buffer
  * @return A dynamically allocated byte buffer containing the serialized message
  */
-uint8_t *ListM3::serialize() {
-    uint8_t *buffer = new(nothrow) uint8_t[ListM3::getMessageSize()];
+uint8_t *ListM3::serialize(uint32_t list_size) {
+    auto *buffer = new(nothrow) uint8_t[Config::MAX_PACKET_SIZE];
     if (!buffer) {
         cerr << "ListM3 - Error during serialization: Failed to allocate memory" << endl;
         return nullptr;
     }
-
     size_t position = 0;
     memcpy(buffer, &m_message_code, sizeof(m_message_code));
     position += sizeof(m_message_code);
 
-    if (m_list_size > 0) {
-        memcpy(buffer + position, m_file_list, m_list_size);
+    if (list_size > 0) {
+        memcpy(buffer + position, m_file_list, list_size);
+        position += sizeof(list_size);
+        // Add randomness to the buffer using RAND_bytes
+        if (RAND_bytes(buffer + position, Config::MAX_PACKET_SIZE - position) != 1) {
+            cerr << "Delete - Error during serialization: RAND_bytes failed" << endl;
+            delete[] buffer; // Release memory in case of failure
+            return nullptr;
+        }
+    } else {
+        return nullptr;
     }
-
     return buffer;
 }
 
@@ -123,20 +146,17 @@ uint8_t *ListM3::serialize() {
  * @param buffer_len The length of the buffer
  * @return A ListM3 object with the deserialized data
  */
-ListM3 ListM3::deserialize(uint8_t *buffer, int buffer_len) {
+ListM3 ListM3::deserialize(uint8_t *buffer, uint32_t list_size) {
     ListM3 listM3Message;
 
     size_t position = 0;
     memcpy(&listM3Message.m_message_code, buffer, sizeof(m_message_code));
     position += sizeof(m_message_code);
 
-    // Deserialize file list if the list size is greater than 0
-    m_list_size = buffer_len - sizeof(m_message_code);
-    if (m_list_size > 0) {
-        m_file_list = new uint8_t[m_list_size];
-        memcpy(m_file_list, buffer + position, m_list_size);
+    if (list_size > 0) {
+        listM3Message.m_file_list = new uint8_t[list_size];
+        memcpy(listM3Message.m_file_list, buffer + position, list_size);
     }
-
     return listM3Message;
 }
 
@@ -144,9 +164,17 @@ ListM3 ListM3::deserialize(uint8_t *buffer, int buffer_len) {
  * Get the size of the ListM3 message in bytes
  * @return The size of the ListM3 message
  */
-size_t ListM3::getMessageSize() const {
+size_t ListM3::getMessageSize(uint32_t list_size) {
     // Sum of the message code size
     // plus the size of the list of files in bytes
     return sizeof(m_message_code) +
-           m_list_size;
+           list_size;
+}
+
+uint8_t ListM3::getMessageCode() const {
+    return m_message_code;
+}
+
+uint8_t *ListM3::getFileList() const {
+    return m_file_list;
 }

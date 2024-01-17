@@ -25,7 +25,11 @@ public:
 
     static ListM2 deserialize(uint8_t *buffer);
 
-    size_t getMessageSize() const;
+    static size_t getMessageSize();
+
+    uint8_t getMessageCode() const;
+
+    uint32_t getListSize() const;
 };
 
 // ListM3 class represents the third message for the list operation
@@ -33,21 +37,25 @@ class ListM3 {
 
 private:
     uint8_t m_message_code{};
-    uint32_t m_list_size{};
     uint8_t *m_file_list{};
 
 public:
     ListM3();
 
+    ~ListM3();
+
     ListM3(uint32_t list_size, uint8_t *file_list);
 
-    uint8_t *serialize();
+    uint8_t *serialize(uint32_t list_size);
 
-    ListM3 deserialize(uint8_t *buffer, int buffer_len);
+    static ListM3 deserialize(uint8_t *buffer, uint32_t list_size);
 
-    size_t getMessageSize() const;
+    static size_t getMessageSize(uint32_t list_size);
 
-    ~ListM3();
+    uint8_t getMessageCode() const;
+
+    uint8_t *getFileList() const;
+
 
 };
 

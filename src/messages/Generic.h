@@ -17,7 +17,7 @@ private:
 public:
     Generic();
 
-    Generic(uint32_t counter);
+    explicit Generic(uint32_t counter);
 
     ~Generic();
 
@@ -32,6 +32,8 @@ public:
     static size_t getMessageSize(size_t plaintext_len);
 
     void print(size_t plaintext_len) const;
+
+    uint32_t getCounter() const;
 };
 
 #endif //SECURE_CLOUD_STORAGE_GENERIC_H
