@@ -11,6 +11,7 @@
 
 #include "SocketManager.h"
 #include "Config.h"
+#include "Generic.h"
 
 
 class Client {
@@ -21,6 +22,8 @@ class Client {
     unsigned char *m_session_key;
     EVP_PKEY* m_long_term_private_key;
 
+    int authentication();
+    int listRequest();
     void incrementCounter();
 
 public:
@@ -35,7 +38,9 @@ public:
      * TOTORE: download() e list()
      * LUCA: upload(), logout() e remove()
      */
-    int authentication();
+    void checkCounterValue();
+
+    void checkCounterValue(Generic generic_message);
 };
 
 

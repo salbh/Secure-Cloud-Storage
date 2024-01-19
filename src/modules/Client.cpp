@@ -2,12 +2,16 @@
 #include <thread>
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#include <string>
+#include <sstream>
 
 #include "SocketManager.h"
 #include "Client.h"
 #include "FileManager.h"
 #include "CodesManager.h"
-
+#include "SimpleMessage.h"
+#include "Generic.h"
+#include "List.h"
 
 Client::Client() = default;
 
@@ -17,6 +21,126 @@ Client::~Client() {
 
 int Client::authentication() {
     return 0;
+}
+
+int Client::listRequest() {
+    // Send message ListM1
+
+    // Determine the size of the plaintext and ciphertext
+    size_t simple_msg_len = SimpleMessage::getMessageSize();
+    // Create a SimpleMessage with LIST_REQUEST code
+    SimpleMessage simple_message(static_cast<uint8_t>(Message::LIST_REQUEST));
+    // Serialize the SimpleMessage to obtain a byte buffer
+    uint8_t *serialized_message = simple_message.serialize();
+    // Create a Generic message with the current counter value
+    Generic generic_msg1(m_counter);
+    // Encrypt the serialized plaintext and init the GenericMessage fields
+    if (generic_msg1.encrypt(m_session_key, serialized_message,
+                             static_cast<int>(simple_msg_len)) == -1) {
+        cout << "Client - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(serialized_message, simple_msg_len);
+    // Serialize Generic message
+    serialized_message = generic_msg1.serialize();
+    if (m_socket->send(serialized_message,
+                    Generic::getMessageSize(simple_msg_len)) == -1) {
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+    delete[] serialized_message;
+
+    incrementCounter();
+
+    // Receive message ListM2
+
+    // Determine the size of the message
+    size_t list_msg2_len = ListM2::getMessageSize();
+    size_t generic_msg2_len = Generic::getMessageSize(list_msg2_len);
+    // Allocate memory for the buffer to receive the Generic message
+    serialized_message = new uint8_t[generic_msg2_len];
+    // Receive the Generic message from the server
+    if (m_socket->receive(serialized_message, generic_msg2_len) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+    // Deserialize the received Generic message
+    Generic generic_msg2 = Generic::deserialize(serialized_message, list_msg2_len);
+    delete[] serialized_message;
+    // Allocate memory for the plaintext buffer
+    auto *plaintext = new uint8_t[list_msg2_len];
+    // Decrypt the Generic message to obtain the serialized message
+    if (generic_msg2.decrypt(m_session_key, plaintext) == -1) {
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg2.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+    ListM2 list_msg2 = ListM2::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, list_msg2_len);
+    delete[] plaintext;
+
+    incrementCounter();
+
+    // Check the received message code
+    if (list_msg2.getMessageCode() != static_cast<uint8_t>(Message::LIST_ACK)) {
+        return static_cast<int>(Return::WRONG_MSG_CODE);
+    }
+
+    // Receive message ListM3
+
+    // Get list size from the second message
+    uint32_t list_size = list_msg2.getListSize();
+    // If list size is 0 no other messages will be received
+    if (list_size == 0) {
+        cout << "There are no files in your storage." << endl;
+        return static_cast<int>(Return::SUCCESS);
+    }
+    // Get the size of the third message and init buffer
+    size_t list_msg3_len = ListM3::getMessageSize(list_size);
+    size_t generic_msg3_len = Generic::getMessageSize(list_msg3_len);
+    serialized_message = new uint8_t[generic_msg3_len];
+    // Receive the Generic message from the server
+    if (m_socket->receive(serialized_message, generic_msg3_len) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+    // Deserialize the received Generic message
+    Generic generic_msg3 = Generic::deserialize(serialized_message, list_msg3_len);
+    delete[] serialized_message;
+    // Allocate memory for the plaintext buffer
+    plaintext = new uint8_t[list_msg3_len];
+    // Decrypt the Generic message to obtain the serialized message
+    if (generic_msg3.decrypt(m_session_key, plaintext) == -1) {
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg3.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+    ListM3 list_msg3 = ListM3::deserialize(plaintext, list_size);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, list_msg2_len);
+    delete[] plaintext;
+
+    incrementCounter();
+
+    // Check the received message code
+    if (list_msg3.getMessageCode() != static_cast<uint8_t>(Message::LIST_RESPONSE)) {
+        return static_cast<int>(Return::WRONG_MSG_CODE);
+    }
+
+    // Show the obtained list to the user
+    cout << "----------- LIST -------------" << endl;
+    istringstream file_list_stream(reinterpret_cast<char*>(list_msg3.getFileList()));
+    string file_name;
+    while (getline(file_list_stream, file_name, ',')) {
+        cout << file_name << endl;
+    }
+    cout << "------------------------------" << endl;
+    return static_cast<int>(Return::SUCCESS);
 }
 
 int Client::run() {
@@ -69,7 +193,8 @@ int Client::run() {
 
 
     //AUTHENTICATION PHASE
-
+    int result = authentication();
+    // Check result
 
     //OPERATIONS PHASE (enter the loop)
     try {
@@ -96,6 +221,10 @@ int Client::run() {
             switch (stoi(operation_code_string)) {
                 case 1:
                     cout << "Client - List Files operation selected\n" << endl;
+                    result = listRequest();
+                    if (result != static_cast<int>(Return::SUCCESS)) {
+                        cout << "List failed with error code " << result << endl;
+                    }
                     break;
 
                 case 2:
@@ -129,15 +258,21 @@ int Client::run() {
     return 0;
 }
 
+/**
+ * Increment the counter value or perform re-authentication if needed.
+ * If the counter reaches the maximum value, re-authentication is triggered.
+ * @throws int Return::LOGIN_FAILURE if re-authentication fails.
+ */
 void Client::incrementCounter() {
     // Check if re-authentication is needed
     if (m_counter == Config::MAX_COUNTER_VALUE) {
-        if (authentication() != static_cast<int>(Return::LOGIN_SUCCESS)) {
+        // Perform re-authentication
+        if (authentication() != static_cast<int>(Return::SUCCESS)) {
             throw static_cast<int>(Return::LOGIN_FAILURE);
         }
-        m_counter = 0;
+        m_counter = 0; // Reset counter after successful re-authentication
     } else {
-        m_counter++;
+        m_counter++; // Increment counter
     }
 }
 
