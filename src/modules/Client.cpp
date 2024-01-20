@@ -148,7 +148,17 @@ int Client::listRequest() {
 
 //-------------------------------------UPLOAD REQUEST-------------------------------------//
 
-
+/**
+ * Client side upload request operation
+ * 1) Send an upload message request to the server specifying file name and file size(UploadM1 message type)
+ * 2) Waits a response from the server indicating the success or failure of the upload request (SimpleMessage)
+ * 3) Divides the file into chunks and sends each chunk to the server as an M3+i message (UploadMi Message)
+ * 4) Waits for the final response from the server after sending all file chunks, indicating the overall success or
+ * failure of the file upload (SimpleMessage)
+ *
+ * @param filename The name of the file to be uploaded
+ * @return An integer value representing the success or failure of the upload process.
+ */
 int Client::uploadRequest(string filename) {
     // Open the file
     FileManager file_to_upload(filename, FileManager::OpenMode::READ);
@@ -189,7 +199,7 @@ int Client::uploadRequest(string filename) {
     incrementCounter();
 
 
-    // 2) Receive the result packet M2 message (success or failed request)
+    // 2) Receive the result packet M2 message (success or failed request. Is a Simple Message)
     // Determine the size of the message to receive
     size_t upload_msg2_len = SimpleMessage::getMessageSize();
 
@@ -275,8 +285,45 @@ int Client::uploadRequest(string filename) {
     OPENSSL_cleanse(chunk_buffer, chunk_size);
 
 
-    // 4) Receive the final packet M3+i+1 message (success or failed file upload)
+    // 4) Receive the final packet M3+i+1 message (success or failed file upload. Is a Simple Message)
+    // Determine the size of the message to receive
+    size_t upload_msgi1_len = SimpleMessage::getMessageSize();
 
+    // Allocate memory for the buffer to receive the Generic message
+    serialized_message = new uint8_t[Generic::getMessageSize(upload_msgi1_len)];
+    if (m_socket->receive(serialized_message, upload_msgi1_len) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+
+    // Deserialize the received Generic message
+    Generic generic_msgi1 = Generic::deserialize(serialized_message, upload_msgi1_len);
+    delete[] serialized_message;
+    // Allocate memory for the plaintext buffer
+    plaintext = new uint8_t[upload_msg2_len];
+    // Decrypt the Generic message to obtain the serialized message
+    if (generic_msgi1.decrypt(m_session_key, plaintext) == -1) {
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msgi1.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+    // Deserialize the upload message 2 received (is a Simple Message )
+    SimpleMessage upload_msg3i = SimpleMessage::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, upload_msgi1_len);
+    delete[] plaintext;
+
+    // Increment counter against replay attack
+    incrementCounter();
+
+    // Check the received message code
+    if (upload_msg3i.getMessageCode() != static_cast<uint8_t>(Result::ACK)) {
+        return static_cast<int>(Return::WRONG_MSG_CODE);
+    }
+
+    // Successful upload
     return static_cast<int>(Return::SUCCESS);
 }
 
@@ -385,12 +432,12 @@ int Client::run() {
                         std::cout << "Client - File exists and is a regular file.\n";
                         continue;
                     }
-
-                    // Execute the upload and check the result
+                    // Execute the upload operation and check the result
                     result = uploadRequest(filename);
-                    if (result != static_cast<int>(Return::SUCCESS)) {
+                    if (result != static_cast<int>(Return::SUCCESS))
                         cout << "Client - Upload failed with error code " << result << endl;
-                    }
+                    else
+                        cout << "Client - File " << filename << " uploaded successfully" << endl;
                     break;
                 }
 
