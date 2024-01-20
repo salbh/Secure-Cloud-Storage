@@ -97,6 +97,16 @@ UploadM1 UploadM1::deserializeUploadM1(uint8_t *upload_message_buffer) {
 }
 
 
+/**
+ * Get the size of the UploadM1 message in bytes
+ * @return Returns the total size of an UploadM1 message.
+ */
+size_t UploadM1::getSizeUploadM1() {
+    size_t size = sizeof(m_message_code) + (Config::FILE_NAME_LEN * sizeof(char)) + sizeof(m_file_size);
+    return size;
+}
+
+
 
 //-------------------------------------------UPLOAD MESSAGE 3+i-------------------------------------------//
 

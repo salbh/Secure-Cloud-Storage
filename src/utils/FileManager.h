@@ -29,7 +29,7 @@ public:
 
     void closeFile();
 
-    int readChunk(char *buffer, streamsize size);
+    int readChunk(uint8_t *buffer, streamsize size);
 
     int writeChunk(const char *buffer, streamsize size);
 

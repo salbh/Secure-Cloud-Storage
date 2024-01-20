@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 #include <thread>
 #include <openssl/pem.h>
 #include <openssl/err.h>
@@ -12,6 +13,7 @@
 #include "SimpleMessage.h"
 #include "Generic.h"
 #include "List.h"
+#include "Upload.h"
 
 Client::Client() = default;
 
@@ -143,6 +145,142 @@ int Client::listRequest() {
     return static_cast<int>(Return::SUCCESS);
 }
 
+
+//-------------------------------------UPLOAD REQUEST-------------------------------------//
+
+
+int Client::uploadRequest(string filename) {
+    // Open the file
+    FileManager file_to_upload(filename, FileManager::OpenMode::READ);
+
+    // Check the file size (0 of greater than 4GB)
+    if (file_to_upload.getFileSize() == 0 || file_to_upload.getFileSize() > Config::MAX_FILE_SIZE) {
+        cerr << "Client - Cannot Upload the File! File Empty or larger than 4GB" << endl;
+        return static_cast<int>(Return::WRONG_FILE_SIZE);
+    }
+
+
+    // 1) Create the M1 message (Upload request specifying the file name and file size) and increment counter
+    UploadM1 upload_msg1(filename, file_to_upload.getFileSize());
+    uint8_t* serialized_message = upload_msg1.serializeUploadM1();
+
+    // Determine the size of the plaintext and ciphertext
+    size_t upload_msg1_len = UploadM1::getSizeUploadM1();
+
+    // Create a Generic message with the current counter value
+    Generic generic_msg1(m_counter);
+    // Encrypt the serialized plaintext and init the GenericMessage fields
+    if (generic_msg1.encrypt(m_session_key, serialized_message,static_cast<int>(upload_msg1_len)) == -1) {
+        cout << "Client - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
+    // Serialize and Send Generic message (UploadM1 message)
+    serialized_message = generic_msg1.serialize();
+    if (m_socket->send(serialized_message,Generic::getMessageSize(upload_msg1_len)) == -1) {
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+
+    //Free the memory allocated for UploadM1 message
+    delete[] serialized_message;
+
+    // Increment counter against replay attack
+    incrementCounter();
+
+
+    // 2) Receive the result packet M2 message (success or failed request)
+    // Determine the size of the message to receive
+    size_t upload_msg2_len = SimpleMessage::getMessageSize();
+
+    // Allocate memory for the buffer to receive the Generic message
+    serialized_message = new uint8_t[Generic::getMessageSize(upload_msg2_len)];
+    if (m_socket->receive(serialized_message, upload_msg2_len) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+
+    // Deserialize the received Generic message
+    Generic generic_msg2 = Generic::deserialize(serialized_message, upload_msg2_len);
+    delete[] serialized_message;
+    // Allocate memory for the plaintext buffer
+    auto *plaintext = new uint8_t[upload_msg2_len];
+    // Decrypt the Generic message to obtain the serialized message
+    if (generic_msg2.decrypt(m_session_key, plaintext) == -1) {
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg2.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+    // Deserialize the upload message 2 received (is a Simple Message )
+    SimpleMessage upload_msg2 = SimpleMessage::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, upload_msg2_len);
+    delete[] plaintext;
+
+    // Increment counter against replay attack
+    incrementCounter();
+
+    // Check the received message code
+    if (upload_msg2.getMessageCode() != static_cast<uint8_t>(Result::ACK)) {
+        return static_cast<int>(Return::WRONG_MSG_CODE);
+    }
+
+
+    // 3) Create the M3+i messages (file chunk)
+    // Determine the chunk size based on the file size and the number of chunks
+    size_t chunk_size = file_to_upload.getFileSize() / file_to_upload.getChunksNum() ;
+    // Allocate a buffer to store each file chunk
+    uint8_t *chunk_buffer = new uint8_t [chunk_size];
+
+    // Iterate all file chunks and send to the Server
+    for (size_t i = 0; i < file_to_upload.getChunksNum(); ++i) {
+        // Adjust the chunk size if is the last chunk
+        if (i == file_to_upload.getChunksNum() - 1)
+            chunk_size = file_to_upload.getLastChunkSize();
+
+        // Read the next chunk from the file
+        file_to_upload.readChunk(chunk_buffer,chunk_size);
+
+        // Create the M3+i packet (UploadMi)
+        UploadMi upload_msgi(chunk_buffer, chunk_size);
+        serialized_message = upload_msgi.serializeUploadMi();
+
+        // Determine the size of the plaintext and ciphertext
+        size_t upload_msgi_len = UploadMi::getSizeUploadMi(chunk_size);
+
+        Generic generic_msgi(m_counter);
+        // Encrypt the serialized plaintext and init the GenericMessage fields
+        if (generic_msgi.encrypt(m_session_key, serialized_message,static_cast<int>(upload_msgi_len)) == -1) {
+            cout << "Client - Error during encryption" << endl;
+            return static_cast<int>(Return::ENCRYPTION_FAILURE);
+        }
+        // Safely clean plaintext buffer
+        OPENSSL_cleanse(serialized_message, upload_msgi_len);
+        // Serialize Generic message
+        serialized_message = generic_msgi.serialize();
+        // Send the serialized GenericMessage to the server
+        if (m_socket->send(serialized_message,Generic::getMessageSize(upload_msgi_len)) == -1) {
+            return static_cast<int>(Return::SEND_FAILURE);
+        }
+        // Clean up memory used for serialization
+        delete[] serialized_message;
+
+        // Increment counter against replay attack
+        incrementCounter();
+    }
+
+    // Safely clean chunk buffer
+    OPENSSL_cleanse(chunk_buffer, chunk_size);
+
+
+    // 4) Receive the final packet M3+i+1 message (success or failed file upload)
+
+    return static_cast<int>(Return::SUCCESS);
+}
+
+
 int Client::run() {
     //LOGIN PHASE
     cout << "Client - Insert Username: ";
@@ -231,9 +369,30 @@ int Client::run() {
                     cout << "Client - Download File operation selected\n" << endl;
                     break;
 
-                case 3:
+                case 3: {
                     cout << "Client - Upload File operation selected\n" << endl;
+                    // Let the user insert the file name
+                    string filename;
+                    cout << "Client - Insert the name of the file to upload: ";
+                    cin >> filename;
+                    // Check if the filename is valid
+                    if (!FileManager::isStringValid(filename)) {
+                        cout << "Client - Invalid File Name" << endl;
+                        continue;
+                    }
+                    // Check if the file exists and is a regular file
+                    if (!std::filesystem::exists(filename) && !std::filesystem::is_regular_file(filename)) {
+                        std::cout << "Client - File exists and is a regular file.\n";
+                        continue;
+                    }
+
+                    // Execute the upload and check the result
+                    result = uploadRequest(filename);
+                    if (result != static_cast<int>(Return::SUCCESS)) {
+                        cout << "Client - Upload failed with error code " << result << endl;
+                    }
                     break;
+                }
 
                 case 4:
                     cout << "Client - Rename File operation selected\n" << endl;
@@ -288,3 +447,5 @@ void Client::showMenu() {
             "* 5.delete\n"
             "* 6.logout\n" << endl;
 }
+
+

@@ -24,6 +24,8 @@ class Client {
 
     int authentication();
     int listRequest();
+    int uploadRequest(string filename);
+
     void incrementCounter();
 
 public:

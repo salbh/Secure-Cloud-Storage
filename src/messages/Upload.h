@@ -30,6 +30,7 @@ public:
 
     uint8_t* serializeUploadM1();
     UploadM1 deserializeUploadM1(uint8_t* upload_message_buffer);
+    static size_t getSizeUploadM1();
 
 };
 
@@ -48,7 +49,7 @@ public:
 
     uint8_t* serializeUploadMi();
     UploadMi deserializeUploadMi(uint8_t* upload_message_buffer, int chunk_size);
-    size_t getSizeUploadMi(int chunk_size);
+    static size_t getSizeUploadMi(int chunk_size);
 
 };
 
