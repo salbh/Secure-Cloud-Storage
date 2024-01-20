@@ -31,7 +31,7 @@ public:
 
     int readChunk(uint8_t *buffer, streamsize size);
 
-    int writeChunk(const char *buffer, streamsize size);
+    int writeChunk(uint8_t *buffer, streamsize size);
 
     void initFileInfo(streamsize file_size);
 

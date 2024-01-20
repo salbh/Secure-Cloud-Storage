@@ -29,8 +29,10 @@ public:
     UploadM1(std::string& file_name, size_t file_size);
 
     uint8_t* serializeUploadM1();
-    UploadM1 deserializeUploadM1(uint8_t* upload_message_buffer);
+    static UploadM1 deserializeUploadM1(uint8_t* upload_message_buffer);
     static size_t getSizeUploadM1();
+    const char *getFilename() const;
+    uint32_t getFileSize() const;
 
 };
 
@@ -48,8 +50,9 @@ public:
     ~UploadMi();
 
     uint8_t* serializeUploadMi();
-    UploadMi deserializeUploadMi(uint8_t* upload_message_buffer, int chunk_size);
+    static UploadMi deserializeUploadMi(uint8_t* upload_message_buffer, int chunk_size);
     static size_t getSizeUploadMi(int chunk_size);
+    uint8_t *getChunk() const;
 
 };
 

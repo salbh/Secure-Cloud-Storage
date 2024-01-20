@@ -165,7 +165,7 @@ int Client::uploadRequest(string filename) {
 
     // Check the file size (0 of greater than 4GB)
     if (file_to_upload.getFileSize() == 0 || file_to_upload.getFileSize() > Config::MAX_FILE_SIZE) {
-        cerr << "Client - Cannot Upload the File! File Empty or larger than 4GB" << endl;
+        cout << "Client - UploadRequest() - Cannot Upload the File! File Empty or larger than 4GB" << endl;
         return static_cast<int>(Return::WRONG_FILE_SIZE);
     }
 
@@ -181,7 +181,7 @@ int Client::uploadRequest(string filename) {
     Generic generic_msg1(m_counter);
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,static_cast<int>(upload_msg1_len)) == -1) {
-        cout << "Client - Error during encryption" << endl;
+        cout << "Client - uploadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Safely clean plaintext buffer
@@ -223,7 +223,7 @@ int Client::uploadRequest(string filename) {
     if (m_counter != generic_msg2.getCounter()) {
         return static_cast<int>(Return::WRONG_COUNTER);
     }
-    // Deserialize the upload message 2 received (is a Simple Message )
+    // Deserialize the upload message 2 received (Simple Message)
     SimpleMessage upload_msg2 = SimpleMessage::deserialize(plaintext);
     // Safely clean plaintext buffer
     OPENSSL_cleanse(plaintext, upload_msg2_len);
@@ -254,24 +254,24 @@ int Client::uploadRequest(string filename) {
         file_to_upload.readChunk(chunk_buffer,chunk_size);
 
         // Create the M3+i packet (UploadMi)
-        UploadMi upload_msgi(chunk_buffer, chunk_size);
-        serialized_message = upload_msgi.serializeUploadMi();
+        UploadMi upload_msg3i(chunk_buffer, chunk_size);
+        serialized_message = upload_msg3i.serializeUploadMi();
 
         // Determine the size of the plaintext and ciphertext
-        size_t upload_msgi_len = UploadMi::getSizeUploadMi(chunk_size);
+        size_t upload_msg3i_len = UploadMi::getSizeUploadMi(chunk_size);
 
-        Generic generic_msgi(m_counter);
+        Generic generic_msg3i(m_counter);
         // Encrypt the serialized plaintext and init the GenericMessage fields
-        if (generic_msgi.encrypt(m_session_key, serialized_message,static_cast<int>(upload_msgi_len)) == -1) {
-            cout << "Client - Error during encryption" << endl;
+        if (generic_msg3i.encrypt(m_session_key, serialized_message,static_cast<int>(upload_msg3i_len)) == -1) {
+            cout << "Client - uploadRequest() - Error during encryption" << endl;
             return static_cast<int>(Return::ENCRYPTION_FAILURE);
         }
         // Safely clean plaintext buffer
-        OPENSSL_cleanse(serialized_message, upload_msgi_len);
+        OPENSSL_cleanse(serialized_message, upload_msg3i_len);
         // Serialize Generic message
-        serialized_message = generic_msgi.serialize();
-        // Send the serialized GenericMessage to the server
-        if (m_socket->send(serialized_message,Generic::getMessageSize(upload_msgi_len)) == -1) {
+        serialized_message = generic_msg3i.serialize();
+        // Send the serialized Generic message to the server
+        if (m_socket->send(serialized_message,Generic::getMessageSize(upload_msg3i_len)) == -1) {
             return static_cast<int>(Return::SEND_FAILURE);
         }
         // Clean up memory used for serialization
@@ -285,41 +285,41 @@ int Client::uploadRequest(string filename) {
     OPENSSL_cleanse(chunk_buffer, chunk_size);
 
 
-    // 4) Receive the final packet M3+i+1 message (success or failed file upload. Is a Simple Message)
+    // 4) Receive the final packet M3+i+1 message (success or failed file upload. Simple Message)
     // Determine the size of the message to receive
-    size_t upload_msgi1_len = SimpleMessage::getMessageSize();
+    size_t upload_msg3i1_len = SimpleMessage::getMessageSize();
 
     // Allocate memory for the buffer to receive the Generic message
-    serialized_message = new uint8_t[Generic::getMessageSize(upload_msgi1_len)];
-    if (m_socket->receive(serialized_message, upload_msgi1_len) == -1) {
+    serialized_message = new uint8_t[Generic::getMessageSize(upload_msg3i1_len)];
+    if (m_socket->receive(serialized_message, upload_msg3i1_len) == -1) {
         delete[] serialized_message;
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
 
     // Deserialize the received Generic message
-    Generic generic_msgi1 = Generic::deserialize(serialized_message, upload_msgi1_len);
+    Generic generic_msg3i1 = Generic::deserialize(serialized_message, upload_msg3i1_len);
     delete[] serialized_message;
     // Allocate memory for the plaintext buffer
     plaintext = new uint8_t[upload_msg2_len];
     // Decrypt the Generic message to obtain the serialized message
-    if (generic_msgi1.decrypt(m_session_key, plaintext) == -1) {
+    if (generic_msg3i1.decrypt(m_session_key, plaintext) == -1) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
     // Check the counter value to prevent replay attacks
-    if (m_counter != generic_msgi1.getCounter()) {
+    if (m_counter != generic_msg3i1.getCounter()) {
         return static_cast<int>(Return::WRONG_COUNTER);
     }
-    // Deserialize the upload message 2 received (is a Simple Message )
-    SimpleMessage upload_msg3i = SimpleMessage::deserialize(plaintext);
+    // Deserialize the upload message 2 received (Simple Message)
+    SimpleMessage upload_msg3i1 = SimpleMessage::deserialize(plaintext);
     // Safely clean plaintext buffer
-    OPENSSL_cleanse(plaintext, upload_msgi1_len);
+    OPENSSL_cleanse(plaintext, upload_msg3i1_len);
     delete[] plaintext;
 
     // Increment counter against replay attack
     incrementCounter();
 
     // Check the received message code
-    if (upload_msg3i.getMessageCode() != static_cast<uint8_t>(Result::ACK)) {
+    if (upload_msg3i1.getMessageCode() != static_cast<uint8_t>(Result::ACK)) {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
 
