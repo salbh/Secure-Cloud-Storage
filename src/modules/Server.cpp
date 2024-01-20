@@ -1,12 +1,13 @@
 #include <iostream>
+#include <openssl/pem.h>
 
 #include "Generic.h"
 #include "Server.h"
 #include "CodesManager.h"
+#include "Authentication.h"
+#include "SimpleMessage.h"
 
 using namespace std;
-
-int counter_instance = 1;
 
 Server::Server(SocketManager *socket) {
     m_socket = socket;
@@ -18,19 +19,58 @@ Server::~Server() {
 }
 
 void Server::incrementCounter() {
-    // Check if re-authentication is needed
+    // Check if re-authenticationRequest is needed
     if (m_counter == Config::MAX_COUNTER_VALUE) {
-        if (authentication() != static_cast<int>(Return::LOGIN_SUCCESS)) {
-            throw static_cast<int>(Return::LOGIN_FAILURE);
+        if (authenticationRequest() != static_cast<int>(Return::AUTHENTICATION_SUCCESS)) {
+            throw static_cast<int>(Return::AUTHENTICATION_FAILURE);
         }
-        m_counter = 0;
     } else {
         m_counter++;
     }
 }
 
-int Server::authentication() {
-    return 0;
+int Server::authenticationRequest() {
+    // Authentication M1 message
+    size_t authentication_m1_length = AuthenticationM1::getMessageSize();
+    uint8_t* serialized_message = new uint8_t[authentication_m1_length];
+    int result = m_socket->receive(serialized_message, authentication_m1_length);
+    if (result != 0) {
+        OPENSSL_cleanse(serialized_message, authentication_m1_length);
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+
+    cout << "Authentication M1 ephemeral key and client's username received!" << endl;
+
+    AuthenticationM1 authenticationM1 = AuthenticationM1::deserialize(serialized_message);
+    OPENSSL_cleanse(serialized_message, authentication_m1_length);
+
+    // Authentication M2 message
+    string username = "../resources/public_keys/" + (string)authenticationM1.getMUsername() + "_key.pem";
+    BIO *bio = BIO_new_file(username.c_str(), "r");
+    EVP_PKEY* client_public_key = nullptr;
+    SimpleMessage simpleMessage;
+    size_t serialized_message_length;
+    if (!bio) {
+        simpleMessage.setMMessageCode(static_cast<int>(Error::USERNAME_NOT_FOUND));
+        cout << "AuthenticationM2 - Username " << username << " not found!" << endl;
+    } else {
+        m_username = (string)authenticationM1.getMUsername();
+        client_public_key = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
+        simpleMessage.setMMessageCode(static_cast<int>(Result::ACK));
+        cout << "AuthenticationM2 - Username " << m_username << " found!" << endl;
+    }
+    BIO_free(bio);
+
+    serialized_message = simpleMessage.serialize();
+    serialized_message_length = SimpleMessage::getMessageSize();
+    result = m_socket->send(serialized_message, serialized_message_length);
+    OPENSSL_cleanse(serialized_message, serialized_message_length);
+    if (result == -1) {
+        EVP_PKEY_free(client_public_key);
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+    cout << "Authentication M2 - Username ACK sent to the client!" << endl;
+    return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
 }
 
 int Server::listRequest(uint8_t *plaintext) {
@@ -58,12 +98,13 @@ int Server::logout(uint8_t *plaintext) {
 }
 
 void Server::run() {
-//    try {
-//        // Perform login
-//        if (login() != 0) {
-//            cout << "Server - Error! Login failed" << endl;
-//            return;
-//        }
+    try {
+        // Perform login
+        int result = authenticationRequest();
+        if (result != static_cast<int>(Return::AUTHENTICATION_SUCCESS)) {
+            cout << "Server - Error! Login failed with error code: " << result << endl;
+            return;
+        }
 //        // Determine the expected size of the message buffer
 //        size_t message_size = Generic::getMessageSize(Config::MAX_PACKET_SIZE);
 //        while (true) {
@@ -116,11 +157,10 @@ void Server::run() {
 //                    break;
 //            }
 //        }
-//    } catch (const exception &e) {
-//        cerr << "Server - Exception in run: " << e.what() << endl;
-//    } catch (int error_code) {
-//        // To add checks on different errors thrown by the functions
-//    }
-    cout << "Server running instance: " << counter_instance << endl;
-    counter_instance++;
+    } catch (const exception &e) {
+        cerr << "Server - Exception in run: " << e.what() << endl;
+    } catch (int error_code) {
+        // To add checks on different errors thrown by the functions
+    }
+
 }

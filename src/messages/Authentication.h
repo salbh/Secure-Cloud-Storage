@@ -28,7 +28,9 @@ public:
     static size_t getMessageSize();
 
     uint8_t* serialize();
-    AuthenticationM1 deserialize(uint8_t* message_buffer);
+    static AuthenticationM1 deserialize(uint8_t* message_buffer);
+
+    const char *getMUsername() const;
 };
 
 class AuthenticationM3 {

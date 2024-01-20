@@ -12,6 +12,8 @@
 #include "SimpleMessage.h"
 #include "Generic.h"
 #include "List.h"
+#include "DiffieHellman.h"
+#include "Authentication.h"
 
 Client::Client() = default;
 
@@ -19,8 +21,56 @@ Client::~Client() {
 
 }
 
-int Client::authentication() {
-    return 0;
+int Client::authenticationRequest() {
+    DiffieHellman dh_instance;
+    EVP_PKEY* dh_ephemeral_key = dh_instance.generateEphemeralKey();
+
+    uint8_t* serialized_dh_ephemeral_key = nullptr;
+    int serialized_dh_ephemeral_key_length;
+    if (dh_instance.serializeEphemeralKey(dh_ephemeral_key, serialized_dh_ephemeral_key,
+                                          serialized_dh_ephemeral_key_length) == -1) {
+        EVP_PKEY_free(dh_ephemeral_key);
+        OPENSSL_cleanse(serialized_dh_ephemeral_key, serialized_dh_ephemeral_key_length);
+        return static_cast<int>(Return::AUTHENTICATION_FAILURE);
+    }
+    // Authentication M1 message
+    size_t serialized_message_length = AuthenticationM1::getMessageSize();
+    AuthenticationM1 authenticationM1(serialized_dh_ephemeral_key,
+                                      serialized_dh_ephemeral_key_length,
+                     m_username);
+    uint8_t* serialized_message = authenticationM1.serialize();
+
+    int result = m_socket->send(serialized_message, serialized_message_length);
+    OPENSSL_cleanse(serialized_message, serialized_message_length);
+    if (result == -1) {
+        EVP_PKEY_free(dh_ephemeral_key);
+        OPENSSL_cleanse(serialized_dh_ephemeral_key, serialized_dh_ephemeral_key_length);
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+    cout << "Authentication M1 message sent to the server!" << endl;
+
+    // Authentication M2 message
+    serialized_message_length = SimpleMessage::getMessageSize();
+    serialized_message = new uint8_t[serialized_message_length];
+    result = m_socket->receive(serialized_message, serialized_message_length);
+
+    if (result == -1) {
+        OPENSSL_cleanse(serialized_message, serialized_message_length);
+        EVP_PKEY_free(dh_ephemeral_key);
+        OPENSSL_cleanse(serialized_dh_ephemeral_key, serialized_dh_ephemeral_key_length);
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+
+    SimpleMessage simpleMessage = SimpleMessage::deserialize(serialized_message);
+    OPENSSL_cleanse(serialized_message, serialized_message_length);
+    if (simpleMessage.getMMessageCode() != static_cast<int>(Result::ACK)) {
+        cout << "User " << m_username << " not found!" << endl;
+        EVP_PKEY_free(dh_ephemeral_key);
+        OPENSSL_cleanse(serialized_dh_ephemeral_key, serialized_dh_ephemeral_key_length);
+        return static_cast<int>(Error::USERNAME_NOT_FOUND);
+    }
+
+    return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
 }
 
 int Client::listRequest() {
@@ -180,21 +230,24 @@ int Client::run() {
         return -1;
     }
 
-    cout << "Client - Successful Authentication for " << m_username << endl;
-
-
     // Connect to the server
     try {
-        SocketManager client_socket = SocketManager(Config::SERVER_IP, Config::SERVER_PORT);
+        m_socket = new SocketManager(Config::SERVER_IP, Config::SERVER_PORT);
     } catch (const exception &e) {
         cout << "Client - Connection to the server failed" << endl;
         return -1;
     }
 
+    cout << "Client - Successful Authentication for " << m_username << endl;
 
     //AUTHENTICATION PHASE
-    int result = authentication();
-    // Check result
+    int result = authenticationRequest();
+    if(result != static_cast<int>(Return::AUTHENTICATION_SUCCESS)) {
+        cout << "Authentication failed with error code: " << result << endl;
+        return -1;
+    } else{
+
+    }
 
     //OPERATIONS PHASE (enter the loop)
     try {
@@ -259,18 +312,17 @@ int Client::run() {
 }
 
 /**
- * Increment the counter value or perform re-authentication if needed.
- * If the counter reaches the maximum value, re-authentication is triggered.
- * @throws int Return::LOGIN_FAILURE if re-authentication fails.
+ * Increment the counter value or perform re-authenticationRequest if needed.
+ * If the counter reaches the maximum value, re-authenticationRequest is triggered.
+ * @throws int Return::AUTHENTICATION_FAILURE if re-authenticationRequest fails.
  */
 void Client::incrementCounter() {
-    // Check if re-authentication is needed
+    // Check if re-authenticationRequest is needed
     if (m_counter == Config::MAX_COUNTER_VALUE) {
-        // Perform re-authentication
-        if (authentication() != static_cast<int>(Return::SUCCESS)) {
-            throw static_cast<int>(Return::LOGIN_FAILURE);
+        // Perform re-authenticationRequest
+        if (authenticationRequest() != static_cast<int>(Return::SUCCESS)) {
+            throw static_cast<int>(Return::AUTHENTICATION_FAILURE);
         }
-        m_counter = 0; // Reset counter after successful re-authentication
     } else {
         m_counter++; // Increment counter
     }

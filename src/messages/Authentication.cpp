@@ -37,6 +37,7 @@ size_t AuthenticationM1::getMessageSize() {
     size_t message_size = 0;
 
     // Calculate the total size by summing the sizes of individual components
+    message_size += sizeof(uint8_t);
     message_size += EPHEMERAL_KEY_LEN * sizeof(uint8_t);
     message_size += sizeof(uint32_t);
     message_size += Config::USERNAME_LEN * sizeof(char);
@@ -107,6 +108,10 @@ AuthenticationM1 AuthenticationM1::deserialize(uint8_t *message_buffer) {
     return authenticationM1;
 }
 
+const char *AuthenticationM1::getMUsername() const {
+    return m_username;
+}
+
 /**
  * @brief Default constructor for the AuthenticationM3 class.
  */
@@ -118,7 +123,7 @@ AuthenticationM3::AuthenticationM3() = default;
  * @param ephemeral_key_len The size of the ephemeral key.
  * @param iv The initialization vector used in the encryption process.
  * @param aad The additional authenticated data.
- * @param tag The authentication tag generated during encryption.
+ * @param tag The authenticationRequest tag generated during encryption.
  * @param encrypted_digital_signature The encrypted digital signature.
  * @param serialized_certificate The serialized certificate.
  * @param serialized_certificate_len The size of the serialized certificate.
@@ -261,7 +266,7 @@ AuthenticationM4::AuthenticationM4() = default;
  * @brief Parameterized constructor for the AuthenticationM4 class.
  * @param iv The initialization vector used in the encryption process.
  * @param aad The additional authenticated data.
- * @param tag The authentication tag generated during encryption.
+ * @param tag The authenticationRequest tag generated during encryption.
  * @param encrypted_digital_signature The encrypted digital signature.
  */
 AuthenticationM4::AuthenticationM4(unsigned char *iv, unsigned char *aad, unsigned char *tag,

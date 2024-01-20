@@ -12,7 +12,7 @@ private:
     SocketManager *m_socket;
     unsigned char *m_session_key;
 
-    int authentication(); //francesco
+    int authenticationRequest(); //francesco
 
     int listRequest(uint8_t *plaintext); //totore
 

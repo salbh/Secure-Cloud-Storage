@@ -18,11 +18,11 @@ class Client {
 
     string m_username;
     uint32_t m_counter;
-    SocketManager *m_socket;
+    SocketManager* m_socket;
     unsigned char *m_session_key;
     EVP_PKEY* m_long_term_private_key;
 
-    int authentication();
+    int authenticationRequest();
     int listRequest();
     void incrementCounter();
 
@@ -34,7 +34,7 @@ public:
     void showMenu();
 
     /**
-     * FRANCESCO: authentication() e rename()
+     * FRANCESCO: authenticationRequest() e rename()
      * TOTORE: download() e list()
      * LUCA: upload(), logout() e remove()
      */
