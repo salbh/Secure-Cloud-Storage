@@ -8,9 +8,9 @@ class Server {
 
 private:
     string m_username;
-    uint32_t m_counter;
+    uint32_t m_counter{};
     SocketManager *m_socket;
-    unsigned char *m_session_key;
+    unsigned char *m_session_key{};
 
     int authentication(); //francesco
 

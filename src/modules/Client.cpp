@@ -40,12 +40,11 @@ int Client::listRequest() {
         cout << "Client - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
-    // Safely clean plaintext buffer
-    OPENSSL_cleanse(serialized_message, simple_msg_len);
     // Serialize Generic message
     serialized_message = generic_msg1.serialize();
     if (m_socket->send(serialized_message,
                     Generic::getMessageSize(simple_msg_len)) == -1) {
+        delete[] serialized_message;
         return static_cast<int>(Return::SEND_FAILURE);
     }
     delete[] serialized_message;

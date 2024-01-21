@@ -1,8 +1,11 @@
-#include "FileManager.h"
-#include "Config.h"
 #include <cmath>
 #include <stdexcept>
 #include <cstring>
+#include <filesystem>
+#include <string>
+
+#include "FileManager.h"
+#include "Config.h"
 
 using namespace std;
 
@@ -98,6 +101,36 @@ void FileManager::initFileInfo(streamsize file_size) {
 }
 
 /**
+ * Retrieve a comma-separated string containing the names of files in the specified directory path.
+ *
+ * @param path The path of the directory from which to retrieve the list of files.
+ * @return A string containing the names of files in the specified directory, separated by commas.
+ *         An empty string is returned in case of an error.
+ * @throws std::invalid_argument If the provided path does not exist.
+ */
+string FileManager::getFilesList(const string& path) {
+    try {
+        // Check if the path exists
+        if (!filesystem::exists(path)) {
+            throw invalid_argument("Path does not exist.");
+        }
+        string filesString;
+        // Iterate over the files in the specified path
+        for (const auto& entry : filesystem::directory_iterator(path)) {
+            filesString += entry.path().filename().string() + ",";
+        }
+        // Remove the trailing "," if there are any files
+        if (!filesString.empty()) {
+            filesString.pop_back();
+        }
+        return filesString;
+    } catch (const exception& e) {
+        cerr << "FileManager - Error! " << e.what() << endl;
+        return "error";
+    }
+}
+
+/**
  * Get the size of the file
  * @return The size of the file in bytes
  */
@@ -127,9 +160,9 @@ streamsize FileManager::getLastChunkSize() const {
  * @param size The size of the buffer
  * @return 0 on success, -1 on failure
  */
-int FileManager::readChunk(char *buffer, streamsize size) {
+int FileManager::readChunk(uint8_t *buffer, streamsize size) {
     if (m_open_mode == READ) {
-        m_in_file.read(buffer, size);
+        m_in_file.read(reinterpret_cast<char *>(buffer), size);
     } else {
         cerr << "FileManager - Error while reading chunk" << endl;
         return -1;
@@ -143,9 +176,9 @@ int FileManager::readChunk(char *buffer, streamsize size) {
  * @param size The size of the data to be written
  * @return 0 on success, -1 on failure
  */
-int FileManager::writeChunk(const char *buffer, streamsize size) {
+int FileManager::writeChunk(uint8_t *buffer, streamsize size) {
     if (m_open_mode == WRITE) {
-        m_out_file.write(buffer, size);
+        m_out_file.write(reinterpret_cast<const char *>(buffer), size);
     } else {
         cerr << "FileManager - Error while writing chunk" << endl;
         return -1;

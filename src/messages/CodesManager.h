@@ -44,6 +44,7 @@ enum class Return : int {
     DECRYPTION_FAILURE,
     WRONG_COUNTER,
     WRONG_MSG_CODE,
+    WRONG_PATH
 };
 
 #endif //SECURE_CLOUD_STORAGE_CODESMANAGER_H

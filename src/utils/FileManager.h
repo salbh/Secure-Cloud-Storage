@@ -29,13 +29,15 @@ public:
 
     void closeFile();
 
-    int readChunk(char *buffer, streamsize size);
+    int readChunk(uint8_t *buffer, streamsize size);
 
-    int writeChunk(const char *buffer, streamsize size);
+    int writeChunk(uint8_t *buffer, streamsize size);
 
     void initFileInfo(streamsize file_size);
 
     static streamsize computeFileSize(const string& file_path);
+
+    static string getFilesList(const string &path);
 
     static bool isFilePresent(const string &file_path);
 
@@ -53,6 +55,8 @@ private:
     streamsize m_last_chunk_size;
 
     void openFile(const string &file_path);
+
+
 };
 
 #endif // FILE_MANAGER_H
