@@ -356,6 +356,14 @@ int Server::deleteRequest(uint8_t *plaintext) {
     return static_cast<int>(Return::SUCCESS);
 }
 
+
+/**
+ * Client side logout request operation
+ * 1) Waits a logout message request from the client (SimpleMessage)
+ * 2) send a response to the client indicating the success or failure of the logout request (SimpleMessage)
+ * @param plaintext The message containing the logout request
+ * @return An integer value representing the success or failure of the upload process.
+ */
 int Server::logoutRequest(uint8_t *plaintext) {
     // 1) Receive the logout request message M1 (SimpleMessage message)
     SimpleMessage logout_msg1 = SimpleMessage::deserialize(plaintext);

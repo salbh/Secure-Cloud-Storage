@@ -330,7 +330,6 @@ int Client::uploadRequest(string filename) {
 
 
 /**
-/**
  * Client side logout request operation
  * 1) Send a logout message request to the server (SimpleMessage)
  * 2) Waits a response from the server indicating the success or failure of the logout request (SimpleMessage)
