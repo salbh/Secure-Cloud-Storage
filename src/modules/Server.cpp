@@ -1,4 +1,5 @@
 #include <iostream>
+#include "filesystem"
 
 #include "Generic.h"
 #include "Server.h"
@@ -6,6 +7,7 @@
 #include "Upload.h"
 #include "FileManager.h"
 #include "SimpleMessage.h"
+#include "Delete.h"
 
 using namespace std;
 
@@ -206,8 +208,152 @@ int Server::renameRequest(uint8_t *plaintext) {
     return 0;
 }
 
+
+/**
+ * Server side delete request operation
+ * 1) Waits delete message request from the client (Delete message type)
+ * 2) Send a response to the client asking the confirmation (SimpleMessage "DELETE_ASK")
+ * 3) Waits the delete confirmation message from the client (SimpleMessage "DELETE_CONFIRM") and then delete the file
+ * 4) Send the final response to the client, indicating the overall success or failure
+ * of the file delete (SimpleMessage)
+ *
+ * @param plaintext The message containing the file name of the file to delete
+ * @return An integer value representing the success or failure of the upload process.
+ */
 int Server::deleteRequest(uint8_t *plaintext) {
-    return 0;
+    // 1) Receive the delete request message M1 (Delete message)
+    Delete delete_msg1 = Delete::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, Delete::getMessageSize());
+    delete[] plaintext;
+
+    // Increment counter against replay attack
+    incrementCounter();
+
+
+
+    // 2) Send the delete confirmation message M2 (SimpleMessage "DELETE_ASK")
+    SimpleMessage delete_msg2 = SimpleMessage(static_cast<uint8_t>(Message::DELETE_ASK));
+
+
+    // Serialize the message to send to the Client
+    uint8_t* serialized_message = delete_msg2.serialize();
+    // Determine the size of the message to send
+    size_t delete_msg2_len = SimpleMessage::getMessageSize();
+
+    // Create a Generic message with the current counter value
+    Generic generic_msg2(m_counter);
+    // Encrypt the serialized plaintext and init the Generic message fields
+    if (generic_msg2.encrypt(m_session_key, serialized_message,static_cast<int>(delete_msg2_len)) == -1) {
+        cout << "Server - deleteRequest() - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
+    // Serialize and Send Generic message (SimpleMessage)
+    serialized_message = generic_msg2.serialize();
+    if (m_socket->send(serialized_message,Generic::getMessageSize(delete_msg2_len)) == -1) {
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+
+    //Free the memory allocated for UploadM1 message
+    delete[] serialized_message;
+
+    // Increment counter against replay attack
+    incrementCounter();
+
+
+    // 3) Receive the Delete M3 message (Delete Ask confirmation message. Simple Message "DELETE_CONFIRM")
+    // Determine the size of the message to receive
+    size_t delete_msg3_len = SimpleMessage::getMessageSize();
+
+    // Allocate memory for the buffer to receive the Generic message
+    serialized_message = new uint8_t[Generic::getMessageSize(delete_msg3_len)];
+    if (m_socket->receive(serialized_message, delete_msg3_len) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+
+    // Deserialize the received Generic message
+    Generic generic_msg3 = Generic::deserialize(serialized_message, delete_msg3_len);
+    delete[] serialized_message;
+    // Allocate memory for the plaintext buffer
+    plaintext = new uint8_t[delete_msg3_len];
+    // Decrypt the Generic message to obtain the serialized message
+    if (generic_msg3.decrypt(m_session_key, plaintext) == -1) {
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg3.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+    // Deserialize the delete message 2 received (Simple Message)
+    SimpleMessage delete_msg3 = SimpleMessage::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, delete_msg3_len);
+    delete[] plaintext;
+
+    // Increment counter against replay attack
+    incrementCounter();
+
+    // Check the received message code
+    if (delete_msg3.getMessageCode() != static_cast<uint8_t>(Message::DELETE_CONFIRM)) {
+        return static_cast<int>(Return::WRONG_MSG_CODE);
+    }
+
+
+    // Create the variables for file name and file path
+    string file_name = (char*)delete_msg1.getFileName();
+    string file_path = "../data/" + m_username + "/";
+
+    // Check if the file with file_name exists
+    if (!std::filesystem::exists(file_path+file_name) && !std::filesystem::is_regular_file(file_path+file_name)) {
+        return static_cast<int>(Error::FILENAME_NOT_FOUND);
+    }
+
+    // Delete file and check the result
+    if (remove((file_path + file_name).c_str())) {
+        cout << "Server - deleteRequest() - file " << file_name << " successful deleted!\n"<< endl;
+
+    }
+    else {
+        return static_cast<int>(Error::DELETE_FILE_ERROR);
+    }
+
+
+
+    // 4) Send the final Delete message M4 (success file deletion. Simple Message)
+    SimpleMessage delete_msg4 = SimpleMessage(static_cast<uint8_t>(Result::ACK));
+
+    // Serialize the message to send to the Client
+    serialized_message = delete_msg4.serialize();
+    // Determine the size of the message to send
+    size_t delete_msg4_len = SimpleMessage::getMessageSize();
+
+    // Create a Generic message with the current counter value
+    Generic generic_msg4(m_counter);
+    // Encrypt the serialized plaintext and init the Generic message fields
+    if (generic_msg4.encrypt(m_session_key, serialized_message,static_cast<int>(delete_msg4_len)) == -1) {
+        cout << "Server - deleteRequest() - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
+    // Serialize and Send Generic message (SimpleMessage)
+    serialized_message = generic_msg4.serialize();
+    if (m_socket->send(serialized_message,Generic::getMessageSize(delete_msg4_len)) == -1) {
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+
+    //Free the memory allocated for UploadM1 message
+    delete[] serialized_message;
+
+    // Increment counter against replay attack
+    incrementCounter();
+
+
+    // Successful delete
+    return static_cast<int>(Return::SUCCESS);
 }
 
 int Server::logoutRequest(uint8_t *plaintext) {

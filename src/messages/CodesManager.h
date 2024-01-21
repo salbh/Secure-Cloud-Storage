@@ -31,7 +31,8 @@ enum class Message : int {
 enum class Error : int {
     USERNAME_NOT_FOUND = 16,
     FILENAME_ALREADY_EXISTS = 17,
-    FILENAME_NOT_FOUND = 18
+    FILENAME_NOT_FOUND = 18,
+    DELETE_FILE_ERROR
 };
 
 enum class Return : int {
@@ -45,6 +46,9 @@ enum class Return : int {
     WRONG_COUNTER,
     WRONG_MSG_CODE,
     WRONG_FILE_SIZE,
+    WRONG_DELETE_CONFIRM,
+    NO_DELETE_CONFIRM,
+
 };
 
 #endif //SECURE_CLOUD_STORAGE_CODESMANAGER_H
