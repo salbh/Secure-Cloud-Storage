@@ -25,6 +25,8 @@ class Client {
     int authentication();
     int listRequest();
     int uploadRequest(string filename);
+    int logoutRequest();
+    int removeRequest(string filename);
 
     void incrementCounter();
 

@@ -174,12 +174,12 @@ int Client::uploadRequest(string filename) {
     UploadM1 upload_msg1(filename, file_to_upload.getFileSize());
     uint8_t* serialized_message = upload_msg1.serializeUploadM1();
 
-    // Determine the size of the plaintext and ciphertext
+    // Determine the size of the message
     size_t upload_msg1_len = UploadM1::getSizeUploadM1();
 
     // Create a Generic message with the current counter value
     Generic generic_msg1(m_counter);
-    // Encrypt the serialized plaintext and init the GenericMessage fields
+    // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,static_cast<int>(upload_msg1_len)) == -1) {
         cout << "Client - uploadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
@@ -199,7 +199,7 @@ int Client::uploadRequest(string filename) {
     incrementCounter();
 
 
-    // 2) Receive the result packet M2 message (success or failed request. Is a Simple Message)
+    // 2) Receive the result message M2 message (success or failed request. Simple Message) and increment counter
     // Determine the size of the message to receive
     size_t upload_msg2_len = SimpleMessage::getMessageSize();
 
@@ -328,6 +328,93 @@ int Client::uploadRequest(string filename) {
 }
 
 
+/**
+/**
+ * Client side logout request operation
+ * 1) Send a logout message request to the server (SimpleMessage)
+ * 2) Waits a response from the server indicating the success or failure of the logout request (SimpleMessage)
+ * @return An integer value representing the success or failure of the logout process.
+ */
+int Client::logoutRequest() {
+    // 1) Create the Logout M1 message (Logout request. Simple Message) and increment counter
+    SimpleMessage logout_msg1 = SimpleMessage(static_cast<uint8_t>(Message::LOGOUT_REQUEST));
+    uint8_t* serialized_message = logout_msg1.serialize();
+
+    // Determine the size of the message
+    size_t logout_msg1_len = logout_msg1.getMessageSize();
+
+    // Create a Generic message with the current counter value
+    Generic generic_msg1(m_counter);
+    // Encrypt the serialized plaintext and init the Generic message fields
+    if (generic_msg1.encrypt(m_session_key, serialized_message,static_cast<int>(logout_msg1_len)) == -1) {
+        cout << "Client - logoutRequest() - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
+    // Serialize and Send Generic message (UploadM1 message)
+    serialized_message = generic_msg1.serialize();
+    if (m_socket->send(serialized_message,Generic::getMessageSize(logout_msg1_len)) == -1) {
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+
+    //Free the memory allocated for UploadM1 message
+    delete[] serialized_message;
+
+    // Increment counter against replay attack
+    incrementCounter();
+
+
+    // 2) Receive the result Logout M2 message (success or failed Logout request. Simple Message)
+    // Determine the size of the message to receive
+    size_t logout_msg2_len = SimpleMessage::getMessageSize();
+
+    // Allocate memory for the buffer to receive the Generic message
+    serialized_message = new uint8_t[Generic::getMessageSize(logout_msg2_len)];
+    if (m_socket->receive(serialized_message, logout_msg2_len) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+
+    // Deserialize the received Generic message
+    Generic generic_msg2 = Generic::deserialize(serialized_message, logout_msg2_len);
+    delete[] serialized_message;
+    // Allocate memory for the plaintext buffer
+    auto *plaintext = new uint8_t[logout_msg2_len];
+    // Decrypt the Generic message to obtain the serialized message
+    if (generic_msg2.decrypt(m_session_key, plaintext) == -1) {
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg2.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+    // Deserialize the upload message 2 received (Simple Message)
+    SimpleMessage logout_msg2 = SimpleMessage::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, logout_msg2_len);
+    delete[] plaintext;
+
+
+    // Check the received message code
+    if (logout_msg2.getMessageCode() != static_cast<uint8_t>(Result::ACK)) {
+        return static_cast<int>(Return::WRONG_MSG_CODE);
+    }
+
+
+    // Successful logout
+    return static_cast<int>(Return::SUCCESS);
+}
+
+int Client::removeRequest(string filename) {
+
+
+
+    // Successful remove
+    return static_cast<int>(Return::SUCCESS);
+}
+
+
 int Client::run() {
     //LOGIN PHASE
     cout << "Client - Insert Username: ";
@@ -437,7 +524,7 @@ int Client::run() {
                     if (result != static_cast<int>(Return::SUCCESS))
                         cout << "Client - Upload failed with error code " << result << endl;
                     else
-                        cout << "Client - File " << filename << " uploaded successfully" << endl;
+                        cout << "Client - File " << filename << " uploaded successfully\n" << endl;
                     break;
                 }
 
@@ -448,9 +535,16 @@ int Client::run() {
                 case 5:
                     cout << "Client - Delete File operation selected\n" << endl;
                     break;
-                case 6:
+                case 6: {
                     cout << "Client - Logout operation selected\n" << endl;
+                    // Execute the logout operation and check the result
+                    result = logoutRequest();
+                    if (result != static_cast<int>(Return::SUCCESS))
+                        cout << "Client - Logout failed with error code " << result << endl;
+                    else
+                        cout << "Client - User " << m_username << " Logout Successful!\n" << endl;
                     break;
+                }
 
                 default:
                     cout << "Client - Not-Existent operation code\n" << endl;

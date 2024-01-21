@@ -210,8 +210,51 @@ int Server::deleteRequest(uint8_t *plaintext) {
     return 0;
 }
 
-int Server::logout(uint8_t *plaintext) {
-    return 0;
+int Server::logoutRequest(uint8_t *plaintext) {
+    // 1) Receive the logout request message M1 (SimpleMessage message)
+    SimpleMessage logout_msg1 = SimpleMessage::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, SimpleMessage::getMessageSize());
+    delete[] plaintext;
+
+    // Increment counter against replay attack
+    incrementCounter();
+
+
+    // 2) Send the success message (if file does not exist) or fail message (if file exist) M2 (SimpleMessage)
+    SimpleMessage logout_msg2 = SimpleMessage(static_cast<uint8_t>(Result::ACK));;
+    // Check if the file already exists, otherwise create the message to send
+
+    // Serialize the message to send to the Client
+    uint8_t* serialized_message = logout_msg2.serialize();
+    // Determine the size of the message to send
+    size_t logout_msg2_len = SimpleMessage::getMessageSize();
+
+    // Create a Generic message with the current counter value
+    Generic generic_msg2(m_counter);
+    // Encrypt the serialized plaintext and init the Generic message fields
+    if (generic_msg2.encrypt(m_session_key, serialized_message,static_cast<int>(logout_msg2_len)) == -1) {
+        cout << "Server - logoutRequest() - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+
+    //Delete The Session Key (Logout operation)
+    OPENSSL_cleanse(m_session_key, sizeof(m_session_key));
+
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
+    // Serialize and Send Generic message (SimpleMessage)
+    serialized_message = generic_msg2.serialize();
+    if (m_socket->send(serialized_message,Generic::getMessageSize(logout_msg2_len)) == -1) {
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+
+    //Free the memory allocated for UploadM1 message
+    delete[] serialized_message;
+
+
+    // Successful logout
+    return static_cast<int>(Return::SUCCESS);
 }
 
 void Server::run() {
@@ -281,3 +324,4 @@ void Server::run() {
     cout << "Server running instance: " << counter_instance << endl;
     counter_instance++;
 }
+
