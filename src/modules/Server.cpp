@@ -194,7 +194,7 @@ int Server::authenticationRequest() {
 
     AuthenticationM3 authenticationM3(serialized_ephemeral_key,
                                       serialized_ephemeral_key_length, aesGcm.getIV(),
-                                      aad, tag, digital_signature,
+                                      aad, tag, ciphertext,
                                       serialized_certificate, serialized_certificate_length);
     serialized_message = authenticationM3.serialize();
     result = m_socket->send(serialized_message, authenticationM3.getMessageSize());

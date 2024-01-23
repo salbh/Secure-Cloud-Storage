@@ -170,7 +170,7 @@ int Client::authenticationRequest() {
 
     unsigned char* decrypted_signature = nullptr;
     int decrypted_signature_length = aesGcm.decrypt(
-            const_cast<unsigned char *>(authe   nticationM3.getMEncryptedDigitalSignature()),
+            const_cast<unsigned char *>(authenticationM3.getMEncryptedDigitalSignature()),
                                                     ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t),
             (unsigned char *) authenticationM3.getMAad(),
             Config::AAD_LEN, const_cast<unsigned char *>(authenticationM3.getMIv()),
