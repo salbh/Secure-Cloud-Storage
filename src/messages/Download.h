@@ -9,43 +9,50 @@ using namespace std;
 
 class DownloadM1 {
 private:
-    uint8_t m_message_code;
-    char m_filename[Config::FILE_NAME_LEN];
+    uint8_t m_message_code{};
+    char m_filename[Config::FILE_NAME_LEN]{};
 
 public:
     DownloadM1();
-    DownloadM1(const string& filename);
+    explicit DownloadM1(const string& filename);
 
     uint8_t* serialize();
-    DownloadM1 deserialize(uint8_t* message_buffer);
+    static DownloadM1 deserialize(uint8_t* message_buffer);
+    static size_t getMessageSize();
+    const char *getFilename() const;
 };
 
 class DownloadM2 {
 private:
-    int m_message_code;
-    uint32_t m_file_size;
+    uint8_t m_message_code{};
+    uint32_t m_file_size{};
 
 public:
-    DownloadM2(const size_t& file_size);
+    DownloadM2();
+    DownloadM2(uint8_t message_code, const size_t &file_size);
 
     uint8_t* serialize();
-    DownloadM2 deserialize(uint8_t* message_buffer, const size_t& file_size);
+    static DownloadM2 deserialize(uint8_t* message_buffer);
+    static size_t getMessageSize();
+    uint8_t getMessageCode() const;
+    uint32_t getFileSize() const;
 };
 
 class DownloadMi {
 private:
-    int m_message_code;
+    uint8_t m_message_code;
     uint8_t* m_file_chunk;
 
 public:
-    DownloadMi(uint8_t* file_chunk, int file_chunk_size);
-    DownloadMi(int file_chunk_size);
+    DownloadMi(uint8_t* file_chunk, size_t chunk_size);
+    explicit DownloadMi(size_t chunk_size);
     ~DownloadMi();
 
-    uint8_t *serialize(int file_chunk_size);
-    DownloadMi deserialize(uint8_t* message_buffer, int file_chunk_size);
-    size_t getMessageSize(int file_chunk_size);
-
+    uint8_t *serialize(size_t chunk_size);
+    static DownloadMi deserialize(uint8_t* message_buffer, size_t chunk_size);
+    static size_t getMessageSize(size_t chunk_size);
+    uint8_t getMessageCode() const;
+    uint8_t *getFileChunk() const;
 };
 
 #endif // SECURE_CLOUD_STORAGE_DOWNLOAD_H

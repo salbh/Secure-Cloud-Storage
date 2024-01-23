@@ -47,6 +47,7 @@ int Generic::encrypt(unsigned char *session_key, unsigned char *plaintext, int p
     // Safely delete IV and plaintext
     aesGcm.cleanIV();
     OPENSSL_cleanse(plaintext, plaintext_len);
+    delete[] plaintext;
 
     return m_ciphertext_len;
 }

@@ -17,6 +17,8 @@ public:
         READ, WRITE
     };
 
+    FileManager();
+
     FileManager(const string &file_path, OpenMode open_mode);
 
     ~FileManager();
@@ -50,9 +52,9 @@ private:
     ifstream m_in_file;
     ofstream m_out_file;
 
-    streamsize m_file_size;
-    streamsize m_chunks_num;
-    streamsize m_last_chunk_size;
+    streamsize m_file_size{};
+    streamsize m_chunks_num{};
+    streamsize m_last_chunk_size{};
 
     void openFile(const string &file_path);
 

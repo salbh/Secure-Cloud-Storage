@@ -30,7 +30,7 @@ private:
 
 
 public:
-    Server(SocketManager *socket);
+    explicit Server(SocketManager *socket);
 
     ~Server();
 

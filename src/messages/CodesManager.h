@@ -9,7 +9,7 @@ enum class Result : int {
     NACK = 1
 };
 
-// Type of message
+// Operation message code
 enum class Message : int {
     AUTHENTICATION_REQUEST = 2,
     UPLOAD_REQUEST = 3,
@@ -27,13 +27,14 @@ enum class Message : int {
     LOGOUT_REQUEST = 15
 };
 
-// Error condition
+// Error message code
 enum class Error : int {
     USERNAME_NOT_FOUND = 16,
     FILENAME_ALREADY_EXISTS = 17,
-    FILENAME_NOT_FOUND = 18
+    FILE_NOT_FOUND = 18
 };
 
+// Return code
 enum class Return : int {
     SUCCESS = 19,
     LOGIN_SUCCESS,
@@ -44,7 +45,9 @@ enum class Return : int {
     DECRYPTION_FAILURE,
     WRONG_COUNTER,
     WRONG_MSG_CODE,
-    WRONG_PATH
+    WRONG_PATH,
+    FILE_ALREADY_EXISTS,
+    FILE_NOT_FOUND,
 };
 
 #endif //SECURE_CLOUD_STORAGE_CODESMANAGER_H

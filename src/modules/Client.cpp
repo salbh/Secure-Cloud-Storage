@@ -12,6 +12,7 @@
 #include "SimpleMessage.h"
 #include "Generic.h"
 #include "List.h"
+#include "Download.h"
 
 Client::Client() = default;
 
@@ -43,7 +44,7 @@ int Client::listRequest() {
     // Serialize Generic message
     serialized_message = generic_msg1.serialize();
     if (m_socket->send(serialized_message,
-                    Generic::getMessageSize(simple_msg_len)) == -1) {
+                       Generic::getMessageSize(simple_msg_len)) == -1) {
         delete[] serialized_message;
         return static_cast<int>(Return::SEND_FAILURE);
     }
@@ -72,14 +73,14 @@ int Client::listRequest() {
     if (generic_msg2.decrypt(m_session_key, plaintext) == -1) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
-    // Check the counter value to prevent replay attacks
-    if (m_counter != generic_msg2.getCounter()) {
-        return static_cast<int>(Return::WRONG_COUNTER);
-    }
     ListM2 list_msg2 = ListM2::deserialize(plaintext);
     // Safely clean plaintext buffer
     OPENSSL_cleanse(plaintext, list_msg2_len);
     delete[] plaintext;
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg2.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
 
     incrementCounter();
 
@@ -115,14 +116,14 @@ int Client::listRequest() {
     if (generic_msg3.decrypt(m_session_key, plaintext) == -1) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
+    ListM3 list_msg3 = ListM3::deserialize(plaintext, list_size);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, list_msg3_len);
+    delete[] plaintext;
     // Check the counter value to prevent replay attacks
     if (m_counter != generic_msg3.getCounter()) {
         return static_cast<int>(Return::WRONG_COUNTER);
     }
-    ListM3 list_msg3 = ListM3::deserialize(plaintext, list_size);
-    // Safely clean plaintext buffer
-    OPENSSL_cleanse(plaintext, list_msg2_len);
-    delete[] plaintext;
 
     incrementCounter();
 
@@ -133,12 +134,152 @@ int Client::listRequest() {
 
     // Show the obtained list to the user
     cout << "----------- LIST -------------" << endl;
-    istringstream file_list_stream(reinterpret_cast<char*>(list_msg3.getFileList()));
+    istringstream file_list_stream(reinterpret_cast<char *>(list_msg3.getFileList()));
     string file_name;
     while (getline(file_list_stream, file_name, ',')) {
         cout << file_name << endl;
     }
     cout << "------------------------------" << endl;
+
+    // Return success code if the end of the function is reached
+    return static_cast<int>(Return::SUCCESS);
+}
+
+int Client::downloadRequest(const string& filename) {
+    // Send message DownloadM1
+
+    // Check if the file to download is already present
+    if (FileManager::isFilePresent(filename)) {
+        return static_cast<int>(Return::FILE_ALREADY_EXISTS);
+    }
+    size_t download_msg1_len = DownloadM1::getMessageSize();
+    DownloadM1 download_msg1(filename);
+    // Serialize the ListM2 message to obtain a byte buffer
+    uint8_t *serialized_message = download_msg1.serialize();
+    // Create a Generic message with the current counter value
+    Generic generic_msg1(m_counter);
+    // Encrypt the serialized plaintext and init the GenericMessage fields
+    if (generic_msg1.encrypt(m_session_key, serialized_message,
+                             static_cast<int>(download_msg1_len)) == -1) {
+        cout << "Client - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+    // Serialize Generic message
+    serialized_message = generic_msg1.serialize();
+    if (m_socket->send(serialized_message,
+                       Generic::getMessageSize(download_msg1_len)) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+    delete[] serialized_message;
+
+    incrementCounter();
+
+    // Receive message DownloadM2
+
+    // Determine the size of the message
+    size_t download_msg2_len = DownloadM2::getMessageSize();
+    size_t generic_msg2_len = Generic::getMessageSize(download_msg2_len);
+    // Allocate memory for the buffer to receive the Generic message
+    serialized_message = new uint8_t[generic_msg2_len];
+    // Receive the Generic message from the server
+    if (m_socket->receive(serialized_message, generic_msg2_len) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+    // Deserialize the received Generic message
+    Generic generic_msg2 = Generic::deserialize(serialized_message, download_msg2_len);
+    delete[] serialized_message;
+    // Allocate memory for the plaintext buffer
+    auto *plaintext = new uint8_t[download_msg2_len];
+    // Decrypt the Generic message to obtain the serialized message
+    if (generic_msg2.decrypt(m_session_key, plaintext) == -1) {
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
+    // Get message content
+    DownloadM2 download_msg2 = DownloadM2::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, download_msg2_len);
+    delete[] plaintext;
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg2.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+
+    incrementCounter();
+
+    // Check the received message code
+    if (download_msg2.getMessageCode() == static_cast<uint8_t>(Error::FILE_NOT_FOUND)) {
+        return static_cast<int>(Return::FILE_NOT_FOUND);
+    }
+    if (download_msg2.getMessageCode() != static_cast<uint8_t>(Message::DOWNLOAD_ACK)) {
+        return static_cast<int>(Return::WRONG_MSG_CODE);
+    }
+
+    // Receive message DownloadM3+i
+
+    // Open a file in write mode and init its information
+    FileManager downloaded_file(filename, FileManager::OpenMode::WRITE);
+    streamsize downloaded_file_size = download_msg2.getFileSize();
+    downloaded_file.initFileInfo(downloaded_file_size);
+
+    streamsize chunk_size = Config::CHUNK_SIZE;
+    streamsize bytes_received = 0;
+
+    // Receive each chunk of the file from the Server
+    for (size_t i = 0; i < downloaded_file.getChunksNum(); i++) {
+        // If the chunk is the last, set the appropriate size
+        if (i == downloaded_file.getChunksNum() - 1) {
+            chunk_size = downloaded_file.getLastChunkSize();
+        }
+        // Receive the message DownloadMi from the Server
+
+        // Determine the size of the message
+        size_t download_msg3i_len = DownloadMi::getMessageSize(chunk_size);
+        size_t generic_msg3i_len = Generic::getMessageSize(download_msg3i_len);
+        // Allocate memory for the buffer to receive the Generic message
+        serialized_message = new uint8_t[generic_msg3i_len];
+        // Receive the Generic message from the server
+        if (m_socket->receive(serialized_message, generic_msg3i_len) == -1) {
+            delete[] serialized_message;
+            return static_cast<int>(Return::RECEIVE_FAILURE);
+        }
+        // Deserialize the received Generic message
+        Generic generic_msg3i = Generic::deserialize(serialized_message, download_msg3i_len);
+        delete[] serialized_message;
+        // Allocate memory for the plaintext buffer
+        plaintext = new uint8_t[download_msg3i_len];
+        // Decrypt the Generic message to obtain the serialized message
+        if (generic_msg3i.decrypt(m_session_key, plaintext) == -1) {
+            return static_cast<int>(Return::DECRYPTION_FAILURE);
+        }
+        DownloadMi download_msg3i = DownloadMi::deserialize(plaintext, chunk_size);
+        // Safely clean plaintext buffer
+        OPENSSL_cleanse(plaintext, download_msg3i_len);
+        delete[] plaintext;
+        // Check the counter value to prevent replay attacks
+        if (m_counter != generic_msg3i.getCounter()) {
+            return static_cast<int>(Return::WRONG_COUNTER);
+        }
+
+        incrementCounter();
+
+        // Check the received message code
+        if (download_msg3i.getMessageCode() != static_cast<uint8_t>(Message::DOWNLOAD_CHUNK)) {
+            return static_cast<int>(Return::WRONG_MSG_CODE);
+        }
+        // Write the current chunk in the file
+        downloaded_file.writeChunk(download_msg3i.getFileChunk(), chunk_size);
+        // Compute and show the progress to the user
+        bytes_received += chunk_size;
+        downloaded_file.getFileSize();
+        // Calculate download progress percentage
+        int progress_percentage = static_cast<int>(
+                ((double)bytes_received / (double)downloaded_file_size) * 100);
+        cout << "Client - Downloading: " << progress_percentage << "% complete" << endl;
+    }
+
+    // Return success code if the end of the function is reached
     return static_cast<int>(Return::SUCCESS);
 }
 
@@ -218,17 +359,38 @@ int Client::run() {
 
             // Execute the operation selected
             switch (stoi(operation_code_string)) {
-                case 1:
+                case 1: {
                     cout << "Client - List Files operation selected\n" << endl;
                     result = listRequest();
                     if (result != static_cast<int>(Return::SUCCESS)) {
                         cout << "List failed with error code " << result << endl;
                     }
                     break;
+                }
 
-                case 2:
+                case 2: {
                     cout << "Client - Download File operation selected\n" << endl;
+                    string filename;
+                    cout << "Client - Insert the name of the file to download: ";
+                    cin >> filename;
+                    // Check if the filename is valid
+                    while (!FileManager::isStringValid(filename)) {
+                        cout << "Client - Insert the name of the file to download: ";
+                        cin >> filename;
+                    }
+                    // Execute the download operation and check the result
+                    result = downloadRequest(filename);
+                    if (result == static_cast<int>(Return::SUCCESS)) {
+                        cout << "Client - File " << filename << " downloaded successfully\n" << endl;
+                    } else if (result == static_cast<int>(Return::FILE_ALREADY_EXISTS)) {
+                        cout << "Client - File " << filename << " already exists\n" << endl;
+                    } else if (result == static_cast<int>(Return::FILE_NOT_FOUND)) {
+                        cout << "Client - File " << filename << " not found\n" << endl;
+                    } else {
+                        cout << "Client - Download failed with error code " << result << endl;
+                    }
                     break;
+                }
 
                 case 3:
                     cout << "Client - Upload File operation selected\n" << endl;
@@ -244,6 +406,8 @@ int Client::run() {
                 case 6:
                     cout << "Client - Logout operation selected\n" << endl;
                     break;
+                case 7:
+                    return 1;
 
                 default:
                     cout << "Client - Not-Existent operation code\n" << endl;
@@ -285,5 +449,6 @@ void Client::showMenu() {
             "* 3.upload\n"
             "* 4.rename\n"
             "* 5.delete\n"
-            "* 6.logout\n" << endl;
+            "* 6.logout\n"
+            "* 7.exit\n" << endl;
 }

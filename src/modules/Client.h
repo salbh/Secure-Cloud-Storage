@@ -24,6 +24,7 @@ class Client {
 
     int authentication();
     int listRequest();
+    int downloadRequest(const string& filename);
     void incrementCounter();
 
 public:

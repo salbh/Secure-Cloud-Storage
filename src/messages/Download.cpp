@@ -38,7 +38,7 @@ uint8_t* DownloadM1::serialize() {
     memcpy(message_buffer, &m_message_code, sizeof(uint8_t));
     current_buffer_position += sizeof(uint8_t);
     // Copy the filename into the buffer
-    memcpy(message_buffer + current_buffer_position, &m_filename, Config::FILE_NAME_LEN * sizeof(char));
+    memcpy(message_buffer + current_buffer_position, m_filename, Config::FILE_NAME_LEN * sizeof(char));
     current_buffer_position += Config::FILE_NAME_LEN * sizeof(char);
     // Generate random bytes to fill the remaining space in the buffer
     if (RAND_bytes(message_buffer + current_buffer_position,
@@ -72,14 +72,28 @@ DownloadM1 DownloadM1::deserialize(uint8_t* message_buffer) {
     return downloadMessage;
 }
 
+size_t DownloadM1::getMessageSize() {
+    return sizeof(m_message_code) +
+        Config::FILE_NAME_LEN;
+}
+
+const char *DownloadM1::getFilename() const {
+    return m_filename;
+}
+
+
 /**
- * @brief Constructor for creating a Download object for a DOWNLOAD_ACK message (Download M2).
+ * @brief Default constructor for the DownloadM2 class.
+ */
+DownloadM2::DownloadM2() = default;
+
+/**
+ * @brief Constructor for creating a DownloadM2 message.
+ * @param message_code Is set to DOWNLOAD_ACK or FILE_NOT_FOUND.
  * @param file_size The size of the file being acknowledged.
  */
-DownloadM2::DownloadM2(const size_t& file_size) {
-    // Set the message code to indicate a Download Ack
-    m_message_code = static_cast<uint8_t>(Message::DOWNLOAD_ACK);
-
+DownloadM2::DownloadM2(uint8_t message_code, const size_t& file_size) {
+    m_message_code = message_code;
     m_file_size = static_cast<uint32_t>(file_size);
 }
 
@@ -112,9 +126,9 @@ uint8_t* DownloadM2::serialize() {
  * @param file_size The size of the file being acknowledged.
  * @return A Download object representing the deserialized message.
  */
-DownloadM2 DownloadM2::deserialize(uint8_t* message_buffer, const size_t& file_size) {
+DownloadM2 DownloadM2::deserialize(uint8_t* message_buffer) {
     // Create a DownloadM2 object to store the deserialized message
-    DownloadM2 downloadM2(file_size);
+    DownloadM2 downloadM2;
 
     size_t current_buffer_position = 0;
 
@@ -127,26 +141,39 @@ DownloadM2 DownloadM2::deserialize(uint8_t* message_buffer, const size_t& file_s
     return downloadM2;
 }
 
+size_t DownloadM2::getMessageSize() {
+    return sizeof(m_message_code)+
+           sizeof(m_file_size);
+}
+
+uint8_t DownloadM2::getMessageCode() const {
+    return m_message_code;
+}
+
+uint32_t DownloadM2::getFileSize() const {
+    return m_file_size;
+}
+
 /**
  * @brief Constructor for creating a Download object for a DOWNLOAD_CHUNK message (Download M3+i).
  * @param file_chunk The file chunk data.
- * @param file_chunk_size The size of the file chunk data.
+ * @param chunk_size The size of the file chunk data.
  */
-DownloadMi::DownloadMi(uint8_t* file_chunk, int file_chunk_size) {
+DownloadMi::DownloadMi(uint8_t* file_chunk, size_t chunk_size) {
     // Set the message code to indicate a Download Chunk
     m_message_code = static_cast<uint8_t>(Message::DOWNLOAD_CHUNK);
-    m_file_chunk = new uint8_t[file_chunk_size];
-    memcpy(m_file_chunk, file_chunk, file_chunk_size * sizeof(uint8_t));
+    m_file_chunk = new uint8_t[chunk_size];
+    memcpy(m_file_chunk, file_chunk, chunk_size * sizeof(uint8_t));
 }
 
 /**
  * @brief Constructor for creating a Download object for a DOWNLOAD_CHUNK message (Download M3+i for the deserialize phase).
- * @param file_chunk_size The size of the file chunk data.
+ * @param chunk_size The size of the file chunk data.
  */
-DownloadMi::DownloadMi(int file_chunk_size) {
+DownloadMi::DownloadMi(size_t chunk_size) {
     // Set the message code to indicate a Download Chunk
     m_message_code = static_cast<uint8_t>(Message::DOWNLOAD_CHUNK);
-    m_file_chunk = new uint8_t[file_chunk_size];
+    m_file_chunk = new uint8_t[chunk_size];
 }
 
 /**
@@ -159,12 +186,12 @@ DownloadMi::~DownloadMi() {
 
 /**
  * @brief Serialize the Download M3+i message.
- * @param file_chunk_size The size of the file chunk data.
+ * @param chunk_size The size of the file chunk data.
  * @return A dynamically allocated buffer containing the serialized message.
  */
-uint8_t* DownloadMi::serialize(int file_chunk_size) {
+uint8_t* DownloadMi::serialize(size_t chunk_size) {
     // Allocate memory for the message buffer
-    uint8_t* message_buffer = new (nothrow) uint8_t[sizeof(uint8_t) + file_chunk_size * sizeof(uint8_t)];
+    uint8_t* message_buffer = new (nothrow) uint8_t[sizeof(uint8_t) + chunk_size * sizeof(uint8_t)];
     // Check if memory allocation was successful
     if (!message_buffer) {
         cerr << "Download - Error during the serialization: Failed to allocate memory!" << endl;
@@ -176,7 +203,7 @@ uint8_t* DownloadMi::serialize(int file_chunk_size) {
     memcpy(message_buffer, &m_message_code, sizeof(uint8_t));
     current_buffer_position += sizeof(uint8_t);
     // Copy the file chunk into the buffer
-    memcpy(message_buffer + current_buffer_position, m_file_chunk, file_chunk_size * sizeof(uint8_t));
+    memcpy(message_buffer + current_buffer_position, m_file_chunk, chunk_size * sizeof(uint8_t));
     // Return the serialized message buffer
     return message_buffer;
 }
@@ -184,19 +211,32 @@ uint8_t* DownloadMi::serialize(int file_chunk_size) {
 /**
  * @brief Deserialize a Download M3+i message from a buffer.
  * @param message_buffer The buffer containing the serialized message.
- * @param file_chunk_size The size of the file chunk data.
+ * @param chunk_size The size of the file chunk data.
  * @return A Download object representing the deserialized message.
  */
-DownloadMi DownloadMi::deserialize(uint8_t* message_buffer, int file_chunk_size) {
+DownloadMi DownloadMi::deserialize(uint8_t* message_buffer, size_t chunk_size) {
     // Create a Download object to store the deserialized message
-    DownloadMi downloadMi(file_chunk_size);
+    DownloadMi downloadMi(chunk_size);
 
     size_t current_buffer_position = 0;
     // Copy the message code from the buffer
     memcpy(&downloadMi.m_message_code, message_buffer, sizeof(uint8_t));
     current_buffer_position += sizeof(uint8_t);
     // Copy the new file chunk from the buffer
-    memcpy(downloadMi.m_file_chunk, message_buffer + current_buffer_position, file_chunk_size * sizeof(uint8_t));
+    memcpy(downloadMi.m_file_chunk, message_buffer + current_buffer_position, chunk_size * sizeof(uint8_t));
     // Return the deserialized Download message
     return downloadMi;
+}
+
+size_t DownloadMi::getMessageSize(size_t chunk_size) {
+    return sizeof(m_message_code) +
+        chunk_size;
+}
+
+uint8_t DownloadMi::getMessageCode() const {
+    return m_message_code;
+}
+
+uint8_t *DownloadMi::getFileChunk() const {
+    return m_file_chunk;
 }

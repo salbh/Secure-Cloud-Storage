@@ -1,4 +1,5 @@
 #include <iostream>
+#include <filesystem>
 
 #include "Generic.h"
 #include "Server.h"
@@ -6,6 +7,7 @@
 #include "SimpleMessage.h"
 #include "FileManager.h"
 #include "List.h"
+#include "Download.h"
 
 using namespace std;
 
@@ -116,11 +118,111 @@ int Server::listRequest(uint8_t *plaintext) {
 
     incrementCounter();
 
+    // Return success code if the end of the function is reached
     return static_cast<int>(Return::SUCCESS);
 }
 
 int Server::downloadRequest(uint8_t *plaintext) {
-    return 0;
+    // Receive message DownloadM1
+
+    // Deserialize received message
+    DownloadM1 download_msg1 = DownloadM1::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, Config::MAX_PACKET_SIZE);
+    delete[] plaintext;
+
+    incrementCounter();
+
+    // Send message DownloadM2
+
+    // Obtain file path
+    string file_path = "../data/" + m_username + "/" + (string) download_msg1.getFilename();
+    DownloadM2 download_msg2;
+    FileManager *file_to_send;
+    // Check if the file is present and correct
+    if (FileManager::isFilePresent(file_path) &&
+        filesystem::is_regular_file(filesystem::path(file_path)) &&
+        !filesystem::is_symlink(filesystem::path(file_path))) {
+        // If the file is present create the message with DOWNLOAD_ACK and the file size
+        file_to_send = new FileManager(file_path, FileManager::OpenMode::READ);
+        download_msg2 = DownloadM2(static_cast<uint8_t>(Message::DOWNLOAD_ACK),
+                                   file_to_send->getFileSize());
+    } else {
+        // If the file is not present create the message with FILE_NOT_FOUND and size 0
+        download_msg2 = DownloadM2(static_cast<uint8_t>(Error::FILE_NOT_FOUND), 0);
+    }
+    size_t download_msg2_len = DownloadM2::getMessageSize();
+    // Serialize the ListM2 message to obtain a byte buffer
+    uint8_t *serialized_message = download_msg2.serialize();
+    // Create a Generic message with the current counter value
+    Generic generic_msg2(m_counter);
+    // Encrypt the serialized plaintext and init the GenericMessage fields
+    if (generic_msg2.encrypt(m_session_key, serialized_message,
+                             static_cast<int>(download_msg2_len)) == -1) {
+        cout << "Client - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+    // Serialize Generic message
+    serialized_message = generic_msg2.serialize();
+    if (m_socket->send(serialized_message,
+                       Generic::getMessageSize(download_msg2_len)) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+    delete[] serialized_message;
+
+    incrementCounter();
+
+    // If the file it is not found, no other messages are sent
+    if (download_msg2.getFileSize() == 0) {
+        delete[] file_to_send;
+        return static_cast<int>(Return::FILE_NOT_FOUND);
+    }
+
+    // Send the message DownloadM3+i
+
+    // Define the chunk size and buffer
+    streamsize chunk_size = Config::CHUNK_SIZE;
+    auto *current_chunk = new uint8_t[chunk_size];
+
+    // Send each chunk of the file to the Client
+    for (size_t i = 0; i < file_to_send->getChunksNum(); i++) {
+        // If the chunk is the last, set the appropriate size
+        if (i == file_to_send->getChunksNum() - 1) {
+            chunk_size = file_to_send->getLastChunkSize();
+        }
+        // Send the message DownloadMi to the Client
+
+        // Read the current chunk from the file
+        file_to_send->readChunk(current_chunk, chunk_size);
+        // Determine the size of the message
+        size_t download_msg3i_len = DownloadMi::getMessageSize(chunk_size);
+        DownloadMi download_msg3i(current_chunk, chunk_size);
+        // Serialize the DownloadMi message to obtain a byte buffer
+        serialized_message = download_msg3i.serialize(chunk_size);
+        // Create a Generic message with the current counter value
+        Generic generic_msg3i(m_counter);
+        // Encrypt the serialized plaintext and init the GenericMessage fields
+        if (generic_msg3i.encrypt(m_session_key, serialized_message,
+                                  static_cast<int>(download_msg3i_len)) == -1) {
+            cout << "Client - Error during encryption" << endl;
+            return static_cast<int>(Return::ENCRYPTION_FAILURE);
+        }
+        // Serialize Generic message
+        serialized_message = generic_msg3i.serialize();
+        if (m_socket->send(serialized_message,
+                           Generic::getMessageSize(download_msg3i_len)) == -1) {
+            delete[] serialized_message;
+            return static_cast<int>(Return::SEND_FAILURE);
+        }
+        delete[] serialized_message;
+
+        incrementCounter();
+    }
+    delete file_to_send;
+
+    // Return success code if the end of the function is reached
+    return static_cast<int>(Return::SUCCESS);
 }
 
 int Server::uploadRequest(uint8_t *plaintext) {
@@ -203,10 +305,10 @@ void Server::run() {
                     break;
             }
         }
-    } catch (const exception &e) {
-        cerr << "Server - Exception in run: " << e.what() << endl;
     } catch (int error_code) {
         // To add checks on different errors thrown by the functions
+    } catch (const exception &e) {
+        cerr << "Server - Exception in run: " << e.what() << endl;
     }
     cout << "Server running instance: " << counter_instance << endl;
     counter_instance++;

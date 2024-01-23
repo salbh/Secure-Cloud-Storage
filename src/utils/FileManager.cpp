@@ -10,6 +10,11 @@
 using namespace std;
 
 /**
+ * Default constructor for the FileManager class
+ */
+FileManager::FileManager() = default;
+
+/**
  * Constructor for the FileManager class
  * @param file_path The path to the file
  * @param open_mode The mode in which the file should be opened (READ or WRITE)
@@ -218,9 +223,9 @@ bool FileManager::isStringValid(const string &input_string) {
         cout << "FileManager - Error! The string cannot be empty" << endl;
         return false;
     }
-    if (input_string.length() > Config::FILE_NAME_LEN) {
+    if (input_string.length() >= Config::FILE_NAME_LEN) {
         cout << "FileManager - Error! The string is too long. Maximum allowed length is "
-             << (int) Config::FILE_NAME_LEN << " characters" << endl;
+             << (int) Config::FILE_NAME_LEN - 1 << " characters" << endl;
         return false;
     }
     if (input_string == "." || input_string == "..") {
