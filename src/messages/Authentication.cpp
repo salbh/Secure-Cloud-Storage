@@ -112,6 +112,15 @@ const char *AuthenticationM1::getMUsername() const {
     return m_username;
 }
 
+const uint8_t *AuthenticationM1::getMEphemeralKey() const {
+    return m_ephemeral_key;
+}
+
+uint32_t AuthenticationM1::getMEphemeralKeyLen() const {
+    return m_ephemeral_key_len;
+}
+
+
 /**
  * @brief Default constructor for the AuthenticationM3 class.
  */
@@ -129,7 +138,7 @@ AuthenticationM3::AuthenticationM3() = default;
  * @param serialized_certificate_len The size of the serialized certificate.
  */
 AuthenticationM3::AuthenticationM3(uint8_t *ephemeral_key, uint32_t ephemeral_key_len, unsigned char *iv,
-                                   unsigned char *aad, unsigned char *tag, uint8_t *encrypted_digital_signature,
+                                   unsigned char *aad, unsigned char *tag, unsigned char *encrypted_digital_signature,
                                    uint8_t *serialized_certificate, uint32_t serialized_certificate_len) {
     // Initialize ephemeral key with provided data and set its size
     memset(m_ephemeral_key, 0, sizeof(m_ephemeral_key));
@@ -256,6 +265,39 @@ AuthenticationM3 AuthenticationM3::deserialize(uint8_t *message_buffer) {
 
     return authenticationM3;
 }
+
+const unsigned char *AuthenticationM3::getMEphemeralKey() const {
+    return m_ephemeral_key;
+}
+
+uint32_t AuthenticationM3::getMEphemeralKeyLen() const {
+    return m_ephemeral_key_len;
+}
+
+const uint8_t *AuthenticationM3::getMSerializedCertificate() const {
+    return m_serialized_certificate;
+}
+
+uint32_t AuthenticationM3::getMSerializedCertificateLen() const {
+    return m_serialized_certificate_len;
+}
+
+const unsigned char *AuthenticationM3::getMAad() const {
+    return m_aad;
+}
+
+const unsigned char *AuthenticationM3::getMTag() const {
+    return m_tag;
+}
+
+const unsigned char *AuthenticationM3::getMIv() const {
+    return m_iv;
+}
+
+const uint8_t *AuthenticationM3::getMEncryptedDigitalSignature() const {
+    return m_encrypted_digital_signature;
+}
+
 
 /**
  * @brief Default constructor for the AuthenticationM4 class.

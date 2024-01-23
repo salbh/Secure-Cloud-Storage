@@ -19,7 +19,7 @@ class Client {
     string m_username;
     uint32_t m_counter;
     SocketManager* m_socket;
-    unsigned char *m_session_key;
+    unsigned char m_session_key[Config::AES_KEY_LEN];
     EVP_PKEY* m_long_term_private_key;
 
     int authenticationRequest();

@@ -14,6 +14,10 @@
 #include "List.h"
 #include "DiffieHellman.h"
 #include "Authentication.h"
+#include "Hash.h"
+#include "DigitalSignatureManager.h"
+#include "AesGcm.h"
+#include "CertificateManager.h"
 
 Client::Client() = default;
 
@@ -23,14 +27,14 @@ Client::~Client() {
 
 int Client::authenticationRequest() {
     DiffieHellman dh_instance;
-    EVP_PKEY* dh_ephemeral_key = dh_instance.generateEphemeralKey();
+    EVP_PKEY* client_ephemeral_key = dh_instance.generateEphemeralKey();
 
     uint8_t* serialized_dh_ephemeral_key = nullptr;
     int serialized_dh_ephemeral_key_length;
-    if (dh_instance.serializeEphemeralKey(dh_ephemeral_key, serialized_dh_ephemeral_key,
+    if (dh_instance.serializeEphemeralKey(client_ephemeral_key, serialized_dh_ephemeral_key,
                                           serialized_dh_ephemeral_key_length) == -1) {
-        EVP_PKEY_free(dh_ephemeral_key);
-        OPENSSL_cleanse(serialized_dh_ephemeral_key, serialized_dh_ephemeral_key_length);
+        EVP_PKEY_free(client_ephemeral_key);
+        delete[] serialized_dh_ephemeral_key;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
     // Authentication M1 message
@@ -43,8 +47,8 @@ int Client::authenticationRequest() {
     int result = m_socket->send(serialized_message, serialized_message_length);
     OPENSSL_cleanse(serialized_message, serialized_message_length);
     if (result == -1) {
-        EVP_PKEY_free(dh_ephemeral_key);
-        OPENSSL_cleanse(serialized_dh_ephemeral_key, serialized_dh_ephemeral_key_length);
+        EVP_PKEY_free(client_ephemeral_key);
+        delete[] serialized_dh_ephemeral_key;
         return static_cast<int>(Return::SEND_FAILURE);
     }
     cout << "Authentication M1 message sent to the server!" << endl;
@@ -55,9 +59,9 @@ int Client::authenticationRequest() {
     result = m_socket->receive(serialized_message, serialized_message_length);
 
     if (result == -1) {
-        OPENSSL_cleanse(serialized_message, serialized_message_length);
-        EVP_PKEY_free(dh_ephemeral_key);
-        OPENSSL_cleanse(serialized_dh_ephemeral_key, serialized_dh_ephemeral_key_length);
+        delete[] serialized_message;
+        EVP_PKEY_free(client_ephemeral_key);
+        delete[] serialized_dh_ephemeral_key;
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
 
@@ -65,10 +69,135 @@ int Client::authenticationRequest() {
     OPENSSL_cleanse(serialized_message, serialized_message_length);
     if (simpleMessage.getMMessageCode() != static_cast<int>(Result::ACK)) {
         cout << "User " << m_username << " not found!" << endl;
-        EVP_PKEY_free(dh_ephemeral_key);
-        OPENSSL_cleanse(serialized_dh_ephemeral_key, serialized_dh_ephemeral_key_length);
+        EVP_PKEY_free(client_ephemeral_key);
+        delete[] serialized_dh_ephemeral_key;
         return static_cast<int>(Error::USERNAME_NOT_FOUND);
     }
+
+    // AuthenticationM3 message
+    size_t authenticationM3_length = AuthenticationM3::getMessageSize();
+    serialized_message = new uint8_t[authenticationM3_length];
+    result = m_socket->receive(serialized_message, authenticationM3_length);
+    if (result != 0) {
+        delete serialized_message;
+        EVP_PKEY_free(client_ephemeral_key);
+        delete[] serialized_dh_ephemeral_key;
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+
+    cout << "AuthenticationM3 message received from the server!" << endl;
+
+    AuthenticationM3 authenticationM3 = AuthenticationM3::deserialize(serialized_message);
+    OPENSSL_cleanse(serialized_message, serialized_message_length);
+
+    EVP_PKEY* server_ephemeral_key = dh_instance.deserializeEphemeralKey(
+            const_cast<uint8_t *>(authenticationM3.getMEphemeralKey()),
+            authenticationM3.getMEphemeralKeyLen());
+
+    uint8_t* shared_secret = nullptr;
+    size_t shared_secret_length;
+    result = dh_instance.deriveSharedSecret(client_ephemeral_key, server_ephemeral_key,
+                                            shared_secret, shared_secret_length);
+    EVP_PKEY_free(client_ephemeral_key);
+    EVP_PKEY_free(server_ephemeral_key);
+    if(result != 0) {
+        OPENSSL_cleanse(shared_secret, shared_secret_length);
+        delete[] serialized_dh_ephemeral_key;
+        return static_cast<int>(Return::AUTHENTICATION_FAILURE);
+    }
+
+    unsigned char* session_key = nullptr;
+    unsigned int session_key_length;
+    Hash::generateSHA256(shared_secret, shared_secret_length, session_key,
+                         session_key_length);
+    memcpy(m_session_key, session_key, Config::AES_KEY_LEN * sizeof(unsigned char));
+    OPENSSL_cleanse(shared_secret, shared_secret_length);
+    delete[] shared_secret;
+    OPENSSL_cleanse(session_key, session_key_length);
+    delete[] session_key;
+
+    cout << "AuthenticationM3 - Session key generated!" << endl;
+
+    int ephemeral_key_buffer_length = authenticationM3.getMEphemeralKeyLen() + serialized_dh_ephemeral_key_length;
+    uint8_t* ephemeral_key_buffer = new uint8_t [ephemeral_key_buffer_length];
+    memcpy(ephemeral_key_buffer, serialized_dh_ephemeral_key,
+           serialized_dh_ephemeral_key_length);
+    memcpy(ephemeral_key_buffer + serialized_dh_ephemeral_key_length, authenticationM3.getMEphemeralKey(),
+           authenticationM3.getMEphemeralKeyLen());
+    delete[] serialized_dh_ephemeral_key;
+
+    unsigned char* digital_signature = nullptr;
+    unsigned int digital_signature_length;
+    DigitalSignatureManager digitalSignatureManager;
+    digitalSignatureManager.generateDS(ephemeral_key_buffer, ephemeral_key_buffer_length,
+                                       digital_signature, digital_signature_length,
+                                       m_long_term_private_key);
+
+    unsigned char *ciphertext = nullptr;
+    m_counter = 0;
+    unsigned char aad[sizeof(uint32_t)];
+    memcpy(aad, &m_counter, Config::AAD_LEN);
+    unsigned char tag[Config::AES_TAG_LEN];
+    AesGcm aesGcm = AesGcm(m_session_key);
+    int ciphertext_length = aesGcm.encrypt(digital_signature, digital_signature_length,
+                                           aad, Config::AAD_LEN,
+                                           ciphertext, tag);
+    delete[] digital_signature;
+
+    if(ciphertext_length == -1) {
+        delete[] serialized_message;
+        delete[] ciphertext;
+        delete[] ephemeral_key_buffer;
+        cerr << "AuthenticationM3 - Error during the encryption!" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+
+    CertificateManager* certificateManager = CertificateManager::getInstance();
+    X509* server_certificate = certificateManager->deserializeCertificate(
+            const_cast<uint8_t *>(authenticationM3.getMSerializedCertificate()),
+            authenticationM3.getMSerializedCertificateLen());
+    if(!certificateManager->verifyCertificate(server_certificate)) {
+        X509_free(server_certificate);
+        delete[] ephemeral_key_buffer;
+        delete[] ciphertext;
+        return static_cast<int>(Return::AUTHENTICATION_FAILURE);
+    }
+
+    cout << "AuthenticationM3 - Server certificate verified!" << endl;
+
+    EVP_PKEY* server_public_key = certificateManager->getPublicKey(server_certificate);
+    X509_free(server_certificate);
+
+    unsigned char* decrypted_signature = nullptr;
+    int decrypted_signature_length = aesGcm.decrypt(
+            const_cast<unsigned char *>(authe   nticationM3.getMEncryptedDigitalSignature()),
+                                                    ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t),
+            (unsigned char *) authenticationM3.getMAad(),
+            Config::AAD_LEN, const_cast<unsigned char *>(authenticationM3.getMIv()),
+            (unsigned char *) authenticationM3.getMTag(), decrypted_signature);
+    if (decrypted_signature_length == -1) {
+        delete[] serialized_message;
+        delete[] decrypted_signature;
+        delete[] ciphertext;
+        delete[] ephemeral_key_buffer;
+        cerr << "AuthenticationM3 - Error during the encryption!" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+
+    bool isSignatureVerified = digitalSignatureManager.isDSverified(ephemeral_key_buffer, ephemeral_key_buffer_length,
+                                                                    decrypted_signature,
+                                                                    decrypted_signature_length,
+                                                                    server_public_key);
+    delete[] ephemeral_key_buffer;
+    delete[] decrypted_signature;
+    EVP_PKEY_free(server_public_key);
+    if (!isSignatureVerified) {
+        delete[] ciphertext;
+        delete[] serialized_message;
+        return static_cast<int>(Return::AUTHENTICATION_FAILURE);
+    }
+
+    cout << "AuthenticationM3 - Server Digital Signature verified!" << endl;
 
     return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
 }

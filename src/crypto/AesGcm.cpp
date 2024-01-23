@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include "Config.h"
+#include "openssl/err.h"
 
 using namespace std;
 
@@ -53,7 +54,7 @@ int AesGcm::encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *
     // Generate IV
     m_iv = new unsigned char[m_iv_len];
     RAND_poll();
-    if (RAND_bytes(m_iv, m_iv_len) != 1) {
+    if (RAND_bytes((unsigned char*)&m_iv[0], m_iv_len) != 1) {
         return handleErrorEncrypt("RAND_bytes for IV generation failed");
     }
     // Initialize the encryption operation.
@@ -123,6 +124,7 @@ int AesGcm::decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char
     }
     // Provide any AAD data.
     if (!EVP_DecryptUpdate(m_ctx, nullptr, &len, aad, aad_len)) {
+
         return handleErrorDecrypt("EVP_DecryptUpdate for AAD failed");
     }
     // Provide the message to be decrypted, and obtain the plaintext output.

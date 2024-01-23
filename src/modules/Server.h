@@ -10,7 +10,7 @@ private:
     string m_username;
     uint32_t m_counter;
     SocketManager *m_socket;
-    unsigned char *m_session_key;
+    unsigned char m_session_key[Config::AES_KEY_LEN];
 
     int authenticationRequest(); //francesco
 
