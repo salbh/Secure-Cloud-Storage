@@ -4,6 +4,7 @@
 #include <openssl/err.h>
 #include <string>
 #include <sstream>
+#include <iomanip>
 
 #include "SocketManager.h"
 #include "Client.h"
@@ -110,7 +111,8 @@ int Client::authenticationRequest() {
     unsigned int session_key_length;
     Hash::generateSHA256(shared_secret, shared_secret_length, session_key,
                          session_key_length);
-    memcpy(m_session_key, session_key, Config::AES_KEY_LEN * sizeof(unsigned char));
+
+    memcpy(m_session_key, session_key, Config::AES_KEY_LEN);
     OPENSSL_cleanse(shared_secret, shared_secret_length);
     delete[] shared_secret;
     OPENSSL_cleanse(session_key, session_key_length);
@@ -186,8 +188,7 @@ int Client::authenticationRequest() {
 
     bool isSignatureVerified = digitalSignatureManager.isDSverified(ephemeral_key_buffer, ephemeral_key_buffer_length,
                                                                     decrypted_signature,
-                                                                    decrypted_signature_length,
-                                                                    server_public_key);
+                                                                    decrypted_signature_length,server_public_key);
     delete[] ephemeral_key_buffer;
     delete[] decrypted_signature;
     EVP_PKEY_free(server_public_key);

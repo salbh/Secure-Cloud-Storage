@@ -10,7 +10,7 @@ using namespace std;
 
 namespace {
     const uint16_t EPHEMERAL_KEY_LEN = 1024;
-    const uint16_t ENCRYPTED_SIGNATURE_LEN = 144;
+    const uint16_t ENCRYPTED_SIGNATURE_LEN = 128;
     const uint16_t MAX_SERIALIZED_CERTIFICATE_LEN = 1500;
 }
 
