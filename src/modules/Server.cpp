@@ -591,7 +591,7 @@ int Server::deleteRequest(uint8_t *plaintext) {
     incrementCounter();
 
     // Check the received message code
-    if (delete_msg3.getMessageCode() != static_cast<uint8_t>(Message::DELETE_CONFIRM)) {
+    if (delete_msg3.getMMessageCode() != static_cast<uint8_t>(Message::DELETE_CONFIRM)) {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
 
@@ -757,7 +757,7 @@ void Server::run() {
                     break;
 
                 case static_cast<uint8_t>(Message::LOGOUT_REQUEST):
-                    logout(plaintext);
+                    logoutRequest(plaintext);
                     return;
 
                 default:

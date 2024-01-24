@@ -516,7 +516,7 @@ int Client::uploadRequest(string filename) {
     incrementCounter();
 
     // Check the received message code
-    if (upload_msg2.getMessageCode() != static_cast<uint8_t>(Result::ACK)) {
+    if (upload_msg2.getMMessageCode() != static_cast<uint8_t>(Result::ACK)) {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
 
@@ -602,7 +602,7 @@ int Client::uploadRequest(string filename) {
     incrementCounter();
 
     // Check the received message code
-    if (upload_msg3i1.getMessageCode() != static_cast<uint8_t>(Result::ACK)) {
+    if (upload_msg3i1.getMMessageCode() != static_cast<uint8_t>(Result::ACK)) {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
 
@@ -679,7 +679,7 @@ int Client::logoutRequest() {
 
 
     // Check the received message code
-    if (logout_msg2.getMessageCode() != static_cast<uint8_t>(Result::ACK)) {
+    if (logout_msg2.getMMessageCode() != static_cast<uint8_t>(Result::ACK)) {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
 
@@ -764,7 +764,7 @@ int Client::deleteRequest(string filename) {
     incrementCounter();
 
     // Check the received message code
-    if (delete_msg2.getMessageCode() != static_cast<uint8_t>(Message::DELETE_ASK)) {
+    if (delete_msg2.getMMessageCode() != static_cast<uint8_t>(Message::DELETE_ASK)) {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
 
@@ -849,7 +849,7 @@ int Client::deleteRequest(string filename) {
         incrementCounter();
 
         // Check the received message code
-        if (delete_msg4.getMessageCode() != static_cast<uint8_t>(Result::ACK)) {
+        if (delete_msg4.getMMessageCode() != static_cast<uint8_t>(Result::ACK)) {
             return static_cast<int>(Return::WRONG_MSG_CODE);
         }
     }
