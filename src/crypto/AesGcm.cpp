@@ -1,6 +1,7 @@
-#include "AesGcm.h"
 #include <iostream>
 #include <cstring>
+
+#include "AesGcm.h"
 #include "Config.h"
 #include "openssl/err.h"
 

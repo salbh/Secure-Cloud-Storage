@@ -1,10 +1,18 @@
-#include "FileManager.h"
-#include "Config.h"
 #include <cmath>
 #include <stdexcept>
 #include <cstring>
+#include <filesystem>
+#include <string>
+
+#include "FileManager.h"
+#include "Config.h"
 
 using namespace std;
+
+/**
+ * Default constructor for the FileManager class
+ */
+FileManager::FileManager() = default;
 
 /**
  * Constructor for the FileManager class
@@ -98,6 +106,36 @@ void FileManager::initFileInfo(streamsize file_size) {
 }
 
 /**
+ * Retrieve a comma-separated string containing the names of files in the specified directory path.
+ *
+ * @param path The path of the directory from which to retrieve the list of files.
+ * @return A string containing the names of files in the specified directory, separated by commas.
+ *         An empty string is returned in case of an error.
+ * @throws std::invalid_argument If the provided path does not exist.
+ */
+string FileManager::getFilesList(const string& path) {
+    try {
+        // Check if the path exists
+        if (!filesystem::exists(path)) {
+            throw invalid_argument("Path does not exist.");
+        }
+        string filesString;
+        // Iterate over the files in the specified path
+        for (const auto& entry : filesystem::directory_iterator(path)) {
+            filesString += entry.path().filename().string() + ",";
+        }
+        // Remove the trailing "," if there are any files
+        if (!filesString.empty()) {
+            filesString.pop_back();
+        }
+        return filesString;
+    } catch (const exception& e) {
+        cerr << "FileManager - Error! " << e.what() << endl;
+        return "error";
+    }
+}
+
+/**
  * Get the size of the file
  * @return The size of the file in bytes
  */
@@ -185,9 +223,9 @@ bool FileManager::isStringValid(const string &input_string) {
         cout << "FileManager - Error! The string cannot be empty" << endl;
         return false;
     }
-    if (input_string.length() > Config::FILE_NAME_LEN) {
+    if (input_string.length() >= Config::FILE_NAME_LEN) {
         cout << "FileManager - Error! The string is too long. Maximum allowed length is "
-             << (int) Config::FILE_NAME_LEN << " characters" << endl;
+             << (int) Config::FILE_NAME_LEN - 1 << " characters" << endl;
         return false;
     }
     if (input_string == "." || input_string == "..") {

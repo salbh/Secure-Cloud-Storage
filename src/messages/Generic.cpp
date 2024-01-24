@@ -44,8 +44,11 @@ int Generic::encrypt(unsigned char *session_key, unsigned char *plaintext, int p
     if (m_ciphertext_len != -1) {
         memcpy(m_iv, aesGcm.getIV(), Config::IV_LEN);
     }
-    // Safely delete IV
+    // Safely delete IV and plaintext
     aesGcm.cleanIV();
+    OPENSSL_cleanse(plaintext, plaintext_len);
+    delete[] plaintext;
+
     return m_ciphertext_len;
 }
 

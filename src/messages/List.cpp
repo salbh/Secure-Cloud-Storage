@@ -17,9 +17,9 @@ ListM2::ListM2() = default;
 /**
  * Constructor of ListM3 to be used in case of serialization
  */
-ListM2::ListM2(uint32_t listSize) {
+ListM2::ListM2(uint32_t list_size) {
     m_message_code = static_cast<uint8_t>(Message::LIST_ACK);
-    m_list_size = listSize;
+    m_list_size = list_size;
 }
 
 /**

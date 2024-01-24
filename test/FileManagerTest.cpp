@@ -15,7 +15,7 @@ void testReadAndWrite() {
     // Write to file
     cout << "Writing on test_1.txt file" << endl;
     FileManager fm_write(file_path, FileManager::OpenMode::WRITE);
-    int res = fm_write.writeChunk(plaintext, plaintext_len);
+    int res = fm_write.writeChunk((uint8_t *) plaintext, plaintext_len);
     assert(res == 0);
     fm_write.initFileInfo(plaintext_len);
     assert(fm_write.getFileSize() == plaintext_len && fm_write.getChunksNum() == 1);
@@ -28,7 +28,7 @@ void testReadAndWrite() {
     FileManager fm_read("test_1.txt", FileManager::OpenMode::READ);
     streamsize file_size = fm_read.getFileSize();
     assert(file_size == plaintext_len);
-    res = fm_read.readChunk(fileData, file_size);
+    res = fm_read.readChunk(reinterpret_cast<uint8_t *>(fileData), file_size);
     assert(res == 0);
 
     cout << "Data read from file: ";
@@ -79,7 +79,7 @@ void testReadAndWriteChunks() {
     auto *buffer = new char[chunk_size];
 
     // Define key and init AesGcm
-    const unsigned char key[] = "0123456789abcdef";
+    unsigned char key[] = "0123456789abcdef";
     AesGcm aesGcm = AesGcm(key);
 
     // Iterate over each chunk of data
@@ -97,7 +97,7 @@ void testReadAndWriteChunks() {
         int ciphertext_len;
 
         // Read chunk from file
-        fm_read.readChunk(buffer, chunk_size);
+        fm_read.readChunk(reinterpret_cast<uint8_t *>(buffer), chunk_size);
         // Encrypt chunk
         ciphertext_len = aesGcm.encrypt(reinterpret_cast<unsigned char *>(buffer),
                                         static_cast<int>(chunk_size),
@@ -108,7 +108,7 @@ void testReadAndWriteChunks() {
         // Decrypt chunk
         aesGcm.decrypt(ciphertext, ciphertext_len, aad, aad_len, iv, tag, plaintext);
         // Write chunk to file
-        fm_write.writeChunk(reinterpret_cast<const char *>(plaintext), chunk_size);
+        fm_write.writeChunk(plaintext, chunk_size);
 
         delete[] plaintext;
         delete[] aad;

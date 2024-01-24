@@ -8,7 +8,7 @@ class Server {
 
 private:
     string m_username;
-    uint32_t m_counter;
+    uint32_t m_counter{};
     SocketManager *m_socket;
     unsigned char m_session_key[Config::AES_KEY_LEN];
 
@@ -30,7 +30,7 @@ private:
 
 
 public:
-    Server(SocketManager *socket);
+    explicit Server(SocketManager *socket);
 
     ~Server();
 

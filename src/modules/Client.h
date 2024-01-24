@@ -24,6 +24,7 @@ class Client {
 
     int authenticationRequest();
     int listRequest();
+    int downloadRequest(const string& filename);
     int uploadRequest(string filename);
     int logoutRequest();
     int deleteRequest(string filename);
@@ -36,14 +37,7 @@ public:
 
     int run();
     void showMenu();
-
-    /**
-     * FRANCESCO: authenticationRequest() e rename()
-     * TOTORE: download() e list()
-     * LUCA: upload(), logout() e remove()
-     */
     void checkCounterValue();
-
     void checkCounterValue(Generic generic_message);
 };
 

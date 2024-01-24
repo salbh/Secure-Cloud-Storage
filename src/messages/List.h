@@ -19,7 +19,7 @@ private:
 public:
     ListM2();
 
-    ListM2(uint32_t listSize);
+    ListM2(uint32_t list_size);
 
     uint8_t *serialize();
 
