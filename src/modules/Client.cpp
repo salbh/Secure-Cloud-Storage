@@ -858,8 +858,6 @@ int Client::deleteRequest(string filename) {
         cout << "Client - deleteRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
-    // Safely clean plaintext buffer
-    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
     // Serialize and Send Generic message (UploadM1 message)
     serialized_message = generic_msg1.serialize();
     if (m_socket->send(serialized_message,Generic::getMessageSize(delete_msg1_len)) == -1) {
@@ -941,8 +939,6 @@ int Client::deleteRequest(string filename) {
             cout << "Client - deleteRequest() - Error during encryption" << endl;
             return static_cast<int>(Return::ENCRYPTION_FAILURE);
         }
-        // Safely clean plaintext buffer
-        OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
         // Serialize and Send Generic message (SimpleMessage)
         serialized_message = generic_msg3.serialize();
         if (m_socket->send(serialized_message,Generic::getMessageSize(delete_msg3_len)) == -1) {
