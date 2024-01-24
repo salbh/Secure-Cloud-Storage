@@ -194,7 +194,9 @@ int Server::downloadRequest(uint8_t *plaintext) {
         // Send the message DownloadMi to the Client
 
         // Read the current chunk from the file
-        file_to_send->readChunk(current_chunk, chunk_size);
+        if (file_to_send->readChunk(current_chunk, chunk_size) == -1) {
+            return static_cast<int>(Return::READ_CHUNK_FAILURE);
+        }
         // Determine the size of the message
         size_t download_msg3i_len = DownloadMi::getMessageSize(chunk_size);
         DownloadMi download_msg3i(current_chunk, chunk_size);

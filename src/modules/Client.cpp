@@ -269,7 +269,9 @@ int Client::downloadRequest(const string& filename) {
             return static_cast<int>(Return::WRONG_MSG_CODE);
         }
         // Write the current chunk in the file
-        downloaded_file.writeChunk(download_msg3i.getFileChunk(), chunk_size);
+        if (downloaded_file.writeChunk(download_msg3i.getFileChunk(), chunk_size) == -1) {
+            return static_cast<int>(Return::WRITE_CHUNK_FAILURE);
+        }
         // Compute and show the progress to the user
         bytes_received += chunk_size;
         downloaded_file.getFileSize();
