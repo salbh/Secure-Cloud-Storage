@@ -131,11 +131,11 @@ EVP_PKEY * DiffieHellman::generateEphemeralKey() {
  * @brief Serializes the provided ephemeral key into PEM format.
  * @param ephemeral_key The ephemeral key to be serialized (EVP_PKEY structure)
  * @param serialized_ephemeral_key The pointer to the buffer that will store the serialized key
- * @param serialized_ephemeral_key_size The integer reference that will store the size of the serialized key
+ * @param serialized_ephemeral_key_length The integer reference that will store the size of the serialized key
  * @return 0 on success, -1 on failure.
  */
 int DiffieHellman::serializeEphemeralKey(EVP_PKEY* ephemeral_key, uint8_t*& serialized_ephemeral_key,
-                                         int& serialized_ephemeral_key_size) {
+                                         int& serialized_ephemeral_key_length) {
     // Create a new memory BIO structure
     BIO *bio = BIO_new(BIO_s_mem());
     if (!bio) {
@@ -151,17 +151,17 @@ int DiffieHellman::serializeEphemeralKey(EVP_PKEY* ephemeral_key, uint8_t*& seri
     }
     // Get the size of the serialized key from the BIO
     const void *memory_BIO_buffer;
-    serialized_ephemeral_key_size = BIO_get_mem_data(bio, &memory_BIO_buffer);
-    if (serialized_ephemeral_key_size < 0) {
+    serialized_ephemeral_key_length = BIO_get_mem_data(bio, &memory_BIO_buffer);
+    if (serialized_ephemeral_key_length < 0) {
         cerr << "DiffieHellman - Error in getting the memory data from BIO" << endl;
         BIO_free(bio);
         return -1;
     }
     // Allocate memory for the serialized key buffer
-    serialized_ephemeral_key = new uint8_t[serialized_ephemeral_key_size];
+    serialized_ephemeral_key = new uint8_t[serialized_ephemeral_key_length];
     // Reads and extracts the serialized ephemeral key from the BIO
-    int read = BIO_read(bio, serialized_ephemeral_key, serialized_ephemeral_key_size);
-    if (read != serialized_ephemeral_key_size) {
+    int read = BIO_read(bio, serialized_ephemeral_key, serialized_ephemeral_key_length);
+    if (read != serialized_ephemeral_key_length) {
         cerr << "DiffieHellman - Error in writing the serialized key into the buffer" << endl;
         BIO_free(bio);
         delete[] serialized_ephemeral_key;
@@ -175,10 +175,10 @@ int DiffieHellman::serializeEphemeralKey(EVP_PKEY* ephemeral_key, uint8_t*& seri
 /**
  * @brief Deserialize the ephemeral key from a serialized buffer
  * @param serialized_ephemeral_key       The buffer containing the serialized key data
- * @param serialized_ephemeral_key_size  The size of the serialized ephemeral key buffer
+ * @param serialized_ephemeral_key_length  The size of the serialized ephemeral key buffer
  * @return The deserialized ephemeral key (EVP_PKEY*), or nullptr on failure
  */
-EVP_PKEY* DiffieHellman::deserializeEphemeralKey(uint8_t* serialized_ephemeral_key, int serialized_ephemeral_key_size) {
+EVP_PKEY* DiffieHellman::deserializeEphemeralKey(uint8_t* serialized_ephemeral_key, int serialized_ephemeral_key_length) {
     // Create a new memory BIO structure
     BIO *bio = BIO_new(BIO_s_mem());
     if (!bio) {
@@ -186,7 +186,7 @@ EVP_PKEY* DiffieHellman::deserializeEphemeralKey(uint8_t* serialized_ephemeral_k
         return nullptr;
     }
     // Write the serialized key data into the memory BIO
-    if (BIO_write(bio, serialized_ephemeral_key, serialized_ephemeral_key_size) <= 0) {
+    if (BIO_write(bio, serialized_ephemeral_key, serialized_ephemeral_key_length) <= 0) {
         cerr << "DiffieHellman - Error in writing the serialized key into the BIO" << endl;
         BIO_free(bio);
         return nullptr;

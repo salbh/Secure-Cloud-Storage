@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstring>
 #include "Config.h"
+#include "openssl/err.h"
 
 using namespace std;
 
@@ -37,7 +38,7 @@ AesGcm::~AesGcm() {
  * @param aad Additional authenticated data
  * @param aad_len Length of the additional authenticated data
  * @param ciphertext The output ciphertext
- * @param tag The authentication tag
+ * @param tag The authenticationRequest tag
  * @return Length of the ciphertext on success, -1 on failure
  */
 int AesGcm::encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *aad, int aad_len,
@@ -96,7 +97,7 @@ int AesGcm::encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *
  * @param aad Additional authenticated data
  * @param aad_len Length of the additional authenticated data
  * @param iv The initialization vector
- * @param tag The authentication tag
+ * @param tag The authenticationRequest tag
  * @param plaintext The output plaintext
  * @return Length of the plaintext on success, -1 on failure
  */
@@ -123,6 +124,7 @@ int AesGcm::decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char
     }
     // Provide any AAD data.
     if (!EVP_DecryptUpdate(m_ctx, nullptr, &len, aad, aad_len)) {
+
         return handleErrorDecrypt("EVP_DecryptUpdate for AAD failed");
     }
     // Provide the message to be decrypted, and obtain the plaintext output.

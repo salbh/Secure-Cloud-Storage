@@ -37,6 +37,7 @@ size_t AuthenticationM1::getMessageSize() {
     size_t message_size = 0;
 
     // Calculate the total size by summing the sizes of individual components
+    message_size += sizeof(uint8_t);
     message_size += EPHEMERAL_KEY_LEN * sizeof(uint8_t);
     message_size += sizeof(uint32_t);
     message_size += Config::USERNAME_LEN * sizeof(char);
@@ -107,6 +108,19 @@ AuthenticationM1 AuthenticationM1::deserialize(uint8_t *message_buffer) {
     return authenticationM1;
 }
 
+const char *AuthenticationM1::getMUsername() const {
+    return m_username;
+}
+
+const uint8_t *AuthenticationM1::getMEphemeralKey() const {
+    return m_ephemeral_key;
+}
+
+uint32_t AuthenticationM1::getMEphemeralKeyLen() const {
+    return m_ephemeral_key_len;
+}
+
+
 /**
  * @brief Default constructor for the AuthenticationM3 class.
  */
@@ -118,13 +132,13 @@ AuthenticationM3::AuthenticationM3() = default;
  * @param ephemeral_key_len The size of the ephemeral key.
  * @param iv The initialization vector used in the encryption process.
  * @param aad The additional authenticated data.
- * @param tag The authentication tag generated during encryption.
+ * @param tag The authenticationRequest tag generated during encryption.
  * @param encrypted_digital_signature The encrypted digital signature.
  * @param serialized_certificate The serialized certificate.
  * @param serialized_certificate_len The size of the serialized certificate.
  */
 AuthenticationM3::AuthenticationM3(uint8_t *ephemeral_key, uint32_t ephemeral_key_len, unsigned char *iv,
-                                   unsigned char *aad, unsigned char *tag, uint8_t *encrypted_digital_signature,
+                                   unsigned char *aad, unsigned char *tag, unsigned char *encrypted_digital_signature,
                                    uint8_t *serialized_certificate, uint32_t serialized_certificate_len) {
     // Initialize ephemeral key with provided data and set its size
     memset(m_ephemeral_key, 0, sizeof(m_ephemeral_key));
@@ -252,6 +266,46 @@ AuthenticationM3 AuthenticationM3::deserialize(uint8_t *message_buffer) {
     return authenticationM3;
 }
 
+const unsigned char *AuthenticationM3::getMEphemeralKey() const {
+    return m_ephemeral_key;
+}
+
+uint32_t AuthenticationM3::getMEphemeralKeyLen() const {
+    return m_ephemeral_key_len;
+}
+
+const uint8_t *AuthenticationM3::getMSerializedCertificate() const {
+    return m_serialized_certificate;
+}
+
+uint32_t AuthenticationM3::getMSerializedCertificateLen() const {
+    return m_serialized_certificate_len;
+}
+
+const unsigned char *AuthenticationM3::getMAad() const {
+    return m_aad;
+}
+
+const unsigned char *AuthenticationM3::getMTag() const {
+    return m_tag;
+}
+
+const unsigned char *AuthenticationM3::getMIv() const {
+    return m_iv;
+}
+
+const uint8_t *AuthenticationM3::getMEncryptedDigitalSignature() const {
+    return m_encrypted_digital_signature;
+}
+
+bool AuthenticationM3::checkCounter(uint32_t counter) {
+    uint32_t aad_counter;
+    memcpy(&aad_counter, m_aad, Config::AAD_LEN);
+    ntohl(counter); // Convert from network byte order to host byte order
+    return (aad_counter == counter);
+}
+
+
 /**
  * @brief Default constructor for the AuthenticationM4 class.
  */
@@ -261,7 +315,7 @@ AuthenticationM4::AuthenticationM4() = default;
  * @brief Parameterized constructor for the AuthenticationM4 class.
  * @param iv The initialization vector used in the encryption process.
  * @param aad The additional authenticated data.
- * @param tag The authentication tag generated during encryption.
+ * @param tag The authenticationRequest tag generated during encryption.
  * @param encrypted_digital_signature The encrypted digital signature.
  */
 AuthenticationM4::AuthenticationM4(unsigned char *iv, unsigned char *aad, unsigned char *tag,
@@ -315,8 +369,6 @@ uint8_t *AuthenticationM4::serialize() {
     current_buffer_position += Config::AES_TAG_LEN * sizeof(char);
     memcpy(message_buffer + current_buffer_position, &m_encrypted_digital_signature,
            ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t));
-    current_buffer_position += ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t);
-
     return message_buffer;
 }
 
@@ -344,4 +396,27 @@ AuthenticationM4 AuthenticationM4::deserialize(uint8_t *message_buffer) {
            ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t));
 
     return authenticationM4;
+}
+
+bool AuthenticationM4::checkCounter(uint32_t counter) {
+    uint32_t aad_counter;
+    memcpy(&aad_counter, m_aad, Config::AAD_LEN);
+    ntohl(counter); // Convert from network byte order to host byte order
+    return (aad_counter == counter);
+}
+
+const unsigned char *AuthenticationM4::getMIv() const {
+    return m_iv;
+}
+
+const unsigned char *AuthenticationM4::getMAad() const {
+    return m_aad;
+}
+
+const unsigned char *AuthenticationM4::getMTag() const {
+    return m_tag;
+}
+
+const uint8_t *AuthenticationM4::getMEncryptedDigitalSignature() const {
+    return m_encrypted_digital_signature;
 }

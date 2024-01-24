@@ -36,9 +36,9 @@ enum class Error : int {
 };
 
 enum class Return : int {
-    SUCCESS = 19,
-    LOGIN_SUCCESS,
-    LOGIN_FAILURE,
+    SUCCESS = 20,
+    AUTHENTICATION_SUCCESS,
+    AUTHENTICATION_FAILURE,
     ENCRYPTION_FAILURE,
     SEND_FAILURE,
     RECEIVE_FAILURE,
@@ -48,7 +48,6 @@ enum class Return : int {
     WRONG_FILE_SIZE,
     WRONG_DELETE_CONFIRM,
     NO_DELETE_CONFIRM,
-
 };
 
 #endif //SECURE_CLOUD_STORAGE_CODESMANAGER_H
