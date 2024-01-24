@@ -761,11 +761,14 @@ int Client::uploadRequest(string filename) {
  */
 int Client::logoutRequest() {
     // 1) Create the Logout M1 message (Logout request. Simple Message) and increment counter
-    SimpleMessage logout_msg1 = SimpleMessage(static_cast<uint8_t>(Message::LOGOUT_REQUEST));
+
+    size_t logout_msg1_len = SimpleMessage::getMessageSize();
+
+    SimpleMessage logout_msg1(static_cast<uint8_t>(Message::LOGOUT_REQUEST));
     uint8_t* serialized_message = logout_msg1.serialize();
 
     // Determine the size of the message
-    size_t logout_msg1_len = logout_msg1.getMessageSize();
+
 
     // Create a Generic message with the current counter value
     Generic generic_msg1(m_counter);
@@ -774,15 +777,14 @@ int Client::logoutRequest() {
         cout << "Client - logoutRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
-    // Safely clean plaintext buffer
-    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
     // Serialize and Send Generic message (UploadM1 message)
     serialized_message = generic_msg1.serialize();
     if (m_socket->send(serialized_message,Generic::getMessageSize(logout_msg1_len)) == -1) {
+        delete[] serialized_message;
         return static_cast<int>(Return::SEND_FAILURE);
     }
 
-    //Free the memory allocated for UploadM1 message
+    //Free the memory allocated for LogoutM1 message
     delete[] serialized_message;
 
     // Increment counter against replay attack
@@ -792,10 +794,10 @@ int Client::logoutRequest() {
     // 2) Receive the result Logout M2 message (success or failed Logout request. Simple Message)
     // Determine the size of the message to receive
     size_t logout_msg2_len = SimpleMessage::getMessageSize();
-
+    size_t generic_msg2_len = Generic::getMessageSize(logout_msg2_len);
     // Allocate memory for the buffer to receive the Generic message
-    serialized_message = new uint8_t[Generic::getMessageSize(logout_msg2_len)];
-    if (m_socket->receive(serialized_message, logout_msg2_len) == -1) {
+    serialized_message = new uint8_t[generic_msg2_len];
+    if (m_socket->receive(serialized_message, generic_msg2_len) == -1) {
         delete[] serialized_message;
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
@@ -819,13 +821,12 @@ int Client::logoutRequest() {
     OPENSSL_cleanse(plaintext, logout_msg2_len);
     delete[] plaintext;
 
-
     // Check the received message code
     if (logout_msg2.getMMessageCode() != static_cast<uint8_t>(Result::ACK)) {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
 
-
+    cout << "Server - Logout successful" << endl;
     // Successful logout
     return static_cast<int>(Return::SUCCESS);
 }
