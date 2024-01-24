@@ -709,7 +709,7 @@ int Server::deleteRequest(uint8_t *plaintext) {
 
 
     // 2) Send the delete confirmation message M2 (SimpleMessage "DELETE_ASK")
-    SimpleMessage delete_msg2 = SimpleMessage(static_cast<uint8_t>(Message::DELETE_ASK));
+    SimpleMessage delete_msg2(static_cast<uint8_t>(Message::DELETE_ASK));
 
 
     // Serialize the message to send to the Client
