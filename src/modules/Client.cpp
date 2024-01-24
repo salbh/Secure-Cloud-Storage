@@ -52,7 +52,7 @@ int Client::authenticationRequest() {
         delete[] serialized_dh_ephemeral_key;
         return static_cast<int>(Return::SEND_FAILURE);
     }
-    cout << "Authentication M1 message sent to the server!" << endl;
+    cout << "AuthenticationM1 message sent to the server!" << endl;
 
     // Authentication M2 message
     serialized_message_length = SimpleMessage::getMessageSize();
@@ -71,6 +71,7 @@ int Client::authenticationRequest() {
     if (simpleMessage.getMMessageCode() != static_cast<int>(Result::ACK)) {
         cout << "User " << m_username << " not found!" << endl;
         EVP_PKEY_free(client_ephemeral_key);
+        delete[] serialized_message;
         delete[] serialized_dh_ephemeral_key;
         return static_cast<int>(Error::USERNAME_NOT_FOUND);
     }
@@ -80,7 +81,7 @@ int Client::authenticationRequest() {
     serialized_message = new uint8_t[authenticationM3_length];
     result = m_socket->receive(serialized_message, authenticationM3_length);
     if (result != 0) {
-        delete serialized_message;
+        delete[] serialized_message;
         EVP_PKEY_free(client_ephemeral_key);
         delete[] serialized_dh_ephemeral_key;
         return static_cast<int>(Return::RECEIVE_FAILURE);
@@ -103,6 +104,7 @@ int Client::authenticationRequest() {
     EVP_PKEY_free(server_ephemeral_key);
     if(result != 0) {
         OPENSSL_cleanse(shared_secret, shared_secret_length);
+        delete[] serialized_message;
         delete[] serialized_dh_ephemeral_key;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
@@ -120,6 +122,30 @@ int Client::authenticationRequest() {
 
     cout << "AuthenticationM3 - Session key generated!" << endl;
 
+    m_counter = 0;
+    if(!authenticationM3.checkCounter(0)) {
+        delete[] serialized_message;
+        delete[] serialized_dh_ephemeral_key;
+        cerr << "AuthenticationM3 - The counters aren't equal!" << endl;
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+
+    AesGcm aesGcm = AesGcm(m_session_key);
+    unsigned char* decrypted_signature = nullptr;
+    int decrypted_signature_length = aesGcm.decrypt(
+            const_cast<unsigned char *>(authenticationM3.getMEncryptedDigitalSignature()),
+                                                    ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t),
+            (unsigned char *) authenticationM3.getMAad(),
+            Config::AAD_LEN, const_cast<unsigned char *>(authenticationM3.getMIv()),
+            (unsigned char *) authenticationM3.getMTag(), decrypted_signature);
+    if (decrypted_signature_length == -1) {
+        delete[] serialized_message;
+        delete[] decrypted_signature;
+        delete[] serialized_dh_ephemeral_key;
+        cerr << "AuthenticationM3 - Error during the decryption!" << endl;
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
+
     int ephemeral_key_buffer_length = authenticationM3.getMEphemeralKeyLen() + serialized_dh_ephemeral_key_length;
     uint8_t* ephemeral_key_buffer = new uint8_t [ephemeral_key_buffer_length];
     memcpy(ephemeral_key_buffer, serialized_dh_ephemeral_key,
@@ -135,33 +161,14 @@ int Client::authenticationRequest() {
                                        digital_signature, digital_signature_length,
                                        m_long_term_private_key);
 
-    unsigned char *ciphertext = nullptr;
-    m_counter = 0;
-    unsigned char aad[sizeof(uint32_t)];
-    memcpy(aad, &m_counter, Config::AAD_LEN);
-    unsigned char tag[Config::AES_TAG_LEN];
-    AesGcm aesGcm = AesGcm(m_session_key);
-    int ciphertext_length = aesGcm.encrypt(digital_signature, digital_signature_length,
-                                           aad, Config::AAD_LEN,
-                                           ciphertext, tag);
-    delete[] digital_signature;
-
-    if(ciphertext_length == -1) {
-        delete[] serialized_message;
-        delete[] ciphertext;
-        delete[] ephemeral_key_buffer;
-        cerr << "AuthenticationM3 - Error during the encryption!" << endl;
-        return static_cast<int>(Return::ENCRYPTION_FAILURE);
-    }
-
     CertificateManager* certificateManager = CertificateManager::getInstance();
     X509* server_certificate = certificateManager->deserializeCertificate(
             const_cast<uint8_t *>(authenticationM3.getMSerializedCertificate()),
             authenticationM3.getMSerializedCertificateLen());
     if(!certificateManager->verifyCertificate(server_certificate)) {
         X509_free(server_certificate);
+        delete[] serialized_message;
         delete[] ephemeral_key_buffer;
-        delete[] ciphertext;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
 
@@ -170,22 +177,6 @@ int Client::authenticationRequest() {
     EVP_PKEY* server_public_key = certificateManager->getPublicKey(server_certificate);
     X509_free(server_certificate);
 
-    unsigned char* decrypted_signature = nullptr;
-    int decrypted_signature_length = aesGcm.decrypt(
-            const_cast<unsigned char *>(authenticationM3.getMEncryptedDigitalSignature()),
-                                                    ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t),
-            (unsigned char *) authenticationM3.getMAad(),
-            Config::AAD_LEN, const_cast<unsigned char *>(authenticationM3.getMIv()),
-            (unsigned char *) authenticationM3.getMTag(), decrypted_signature);
-    if (decrypted_signature_length == -1) {
-        delete[] serialized_message;
-        delete[] decrypted_signature;
-        delete[] ciphertext;
-        delete[] ephemeral_key_buffer;
-        cerr << "AuthenticationM3 - Error during the encryption!" << endl;
-        return static_cast<int>(Return::ENCRYPTION_FAILURE);
-    }
-
     bool isSignatureVerified = digitalSignatureManager.isDSverified(ephemeral_key_buffer, ephemeral_key_buffer_length,
                                                                     decrypted_signature,
                                                                     decrypted_signature_length,server_public_key);
@@ -193,12 +184,44 @@ int Client::authenticationRequest() {
     delete[] decrypted_signature;
     EVP_PKEY_free(server_public_key);
     if (!isSignatureVerified) {
-        delete[] ciphertext;
         delete[] serialized_message;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
 
     cout << "AuthenticationM3 - Server Digital Signature verified!" << endl;
+
+    // AuthenticationM4 message
+
+    unsigned char *ciphertext = nullptr;
+    m_counter = 1;
+    unsigned char aad[sizeof(uint32_t)];
+    memcpy(aad, &m_counter, Config::AAD_LEN);
+    unsigned char tag[Config::AES_TAG_LEN];
+    int ciphertext_length = aesGcm.encrypt(digital_signature, ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t),
+                                           aad, Config::AAD_LEN,
+                                           ciphertext, tag);
+    delete[] digital_signature;
+
+    if(ciphertext_length == -1) {
+        delete[] serialized_message;
+        delete[] ciphertext;
+        cerr << "AuthenticationM4 - Error during the encryption!" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+
+    serialized_message_length = AuthenticationM4::getMessageSize();
+    AuthenticationM4 authenticationM4(aesGcm.getIV(), aad, tag, ciphertext);
+    serialized_message = authenticationM4.serialize();
+    result = m_socket->send(serialized_message, serialized_message_length);
+
+    OPENSSL_cleanse(serialized_message, serialized_message_length);
+    delete[] serialized_message;
+    delete[] ciphertext;
+
+    if (result == -1) {
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+    cout << "AuthenticationM4 message sent to the server!" << endl;
 
     return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
 }

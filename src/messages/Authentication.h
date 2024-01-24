@@ -68,26 +68,31 @@ public:
 
     uint8_t* serialize();
     static AuthenticationM3 deserialize(uint8_t* message_buffer);
+
+    bool checkCounter(uint32_t i);
 };
 
 class AuthenticationM4 {
 private:
-    unsigned char* m_iv;
-    unsigned char* m_aad[Config::AAD_LEN];
-    unsigned char* m_tag[Config::AES_TAG_LEN];
+    unsigned char m_iv[Config::IV_LEN];
+    unsigned char m_aad[Config::AAD_LEN];
+    unsigned char m_tag[Config::AES_TAG_LEN];
     uint8_t m_encrypted_digital_signature[ENCRYPTED_SIGNATURE_LEN];
 
 public:
     AuthenticationM4();
     AuthenticationM4(unsigned char *iv, unsigned char *aad, unsigned char *tag, uint8_t *encrypted_digital_signature);
 
-    int getMessageSize();
+    static int getMessageSize();
 
     uint8_t* serialize();
-    AuthenticationM4 deserialize(uint8_t* message_buffer);
+    static AuthenticationM4 deserialize(uint8_t* message_buffer);
+    bool checkCounter(uint32_t i);
 
-
-
+    const unsigned char *getMIv() const;
+    const unsigned char *getMAad() const;
+    const unsigned char *getMTag() const;
+    const uint8_t *getMEncryptedDigitalSignature() const;
 };
 
 #endif //SECURE_CLOUD_STORAGE_AUTHENTICATION_H

@@ -171,7 +171,6 @@ int Server::authenticationRequest() {
     digitalSignatureManager.generateDS(ephemeral_key_buffer, ephemeral_key_buffer_length,
                                        digital_signature, digital_signature_length, server_private_key);
     EVP_PKEY_free(server_private_key);
-
     unsigned char *ciphertext = nullptr;
     m_counter = 0;
     unsigned char aad[sizeof(uint32_t)];
@@ -211,10 +210,56 @@ int Server::authenticationRequest() {
     }
     cout << "AuthenticationM3 message sent to the client!" << endl;
 
+    // AuthenticationM4
 
+    serialized_message_length = AuthenticationM4::getMessageSize();
+    serialized_message = new uint8_t[serialized_message_length];
+    result = m_socket->receive(serialized_message, serialized_message_length);
+    if (result != 0) {
+        delete[] serialized_message;
+        delete[] ephemeral_key_buffer;
+        EVP_PKEY_free(client_public_key);
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+    cout << "AuthenticationM4 message received from the server!" << endl;
 
+    AuthenticationM4 authenticationM4 = AuthenticationM4::deserialize(serialized_message);
+    if(!authenticationM4.checkCounter(1)) {
+        delete[] serialized_message;
+        delete[] ephemeral_key_buffer;
+        cerr << "AuthenticationM4 - The counters aren't equal!" << endl;
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+    unsigned char* decrypted_signature = nullptr;
+    unsigned int decrypted_signature_length = aesGcm.decrypt(
+            const_cast<unsigned char *>(authenticationM4.getMEncryptedDigitalSignature()),
+            ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t),
+            (unsigned char *) authenticationM4.getMAad(),
+            Config::AAD_LEN, const_cast<unsigned char *>(authenticationM4.getMIv()),
+            (unsigned char *) authenticationM4.getMTag(), decrypted_signature);
 
+    if (decrypted_signature_length == -1) {
+        delete[] ephemeral_key_buffer;
+        delete[] serialized_message;
+        delete[] decrypted_signature;
+        cerr << "AuthenticationM4 - Error during the decryption!" << endl;
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
 
+    bool isSignatureVerified = digitalSignatureManager.isDSverified(ephemeral_key_buffer,
+                                                                    ephemeral_key_buffer_length,
+                                                                    decrypted_signature,
+                                                                    decrypted_signature_length,
+                                                                    client_public_key);
+    delete[] ephemeral_key_buffer;
+    delete[] decrypted_signature;
+    EVP_PKEY_free(client_public_key);
+    if (!isSignatureVerified) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::AUTHENTICATION_FAILURE);
+    }
+
+    cout << "AuthenticationM4 - Client Signature verified!" << endl;
 
     return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
 }

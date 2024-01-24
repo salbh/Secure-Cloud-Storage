@@ -298,6 +298,13 @@ const uint8_t *AuthenticationM3::getMEncryptedDigitalSignature() const {
     return m_encrypted_digital_signature;
 }
 
+bool AuthenticationM3::checkCounter(uint32_t counter) {
+    uint32_t aad_counter;
+    memcpy(&aad_counter, m_aad, Config::AAD_LEN);
+    ntohl(counter); // Convert from network byte order to host byte order
+    return (aad_counter == counter);
+}
+
 
 /**
  * @brief Default constructor for the AuthenticationM4 class.
@@ -362,8 +369,6 @@ uint8_t *AuthenticationM4::serialize() {
     current_buffer_position += Config::AES_TAG_LEN * sizeof(char);
     memcpy(message_buffer + current_buffer_position, &m_encrypted_digital_signature,
            ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t));
-    current_buffer_position += ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t);
-
     return message_buffer;
 }
 
@@ -391,4 +396,27 @@ AuthenticationM4 AuthenticationM4::deserialize(uint8_t *message_buffer) {
            ENCRYPTED_SIGNATURE_LEN * sizeof(uint8_t));
 
     return authenticationM4;
+}
+
+bool AuthenticationM4::checkCounter(uint32_t counter) {
+    uint32_t aad_counter;
+    memcpy(&aad_counter, m_aad, Config::AAD_LEN);
+    ntohl(counter); // Convert from network byte order to host byte order
+    return (aad_counter == counter);
+}
+
+const unsigned char *AuthenticationM4::getMIv() const {
+    return m_iv;
+}
+
+const unsigned char *AuthenticationM4::getMAad() const {
+    return m_aad;
+}
+
+const unsigned char *AuthenticationM4::getMTag() const {
+    return m_tag;
+}
+
+const uint8_t *AuthenticationM4::getMEncryptedDigitalSignature() const {
+    return m_encrypted_digital_signature;
 }
