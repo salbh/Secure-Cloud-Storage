@@ -20,8 +20,8 @@ public:
     void loadDHParameters(DH *pSt);
     EVP_PKEY * generateEphemeralKey();
     int serializeEphemeralKey(EVP_PKEY *ephemeral_key, uint8_t *&serialized_ephemeral_key,
-                          int &serialized_ephemeral_key_size);
-    EVP_PKEY *deserializeEphemeralKey(uint8_t *serialized_ephemeral_key, int serialized_ephemeral_key_size);
+                          int &serialized_ephemeral_key_length);
+    EVP_PKEY *deserializeEphemeralKey(uint8_t *serialized_ephemeral_key, int serialized_ephemeral_key_length);
     int deriveSharedSecret(EVP_PKEY *own_ephemeral_key, EVP_PKEY *peer_ephemeral_key, unsigned char *&shared_secret,
                            size_t &shared_secret_size);
 };

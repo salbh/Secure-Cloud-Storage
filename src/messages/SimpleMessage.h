@@ -26,7 +26,8 @@ public:
 
     static size_t getMessageSize();
 
-    uint8_t getMessageCode() const;
+    uint8_t getMMessageCode() const;
+    void setMMessageCode(uint8_t mMessageCode);
 };
 
 

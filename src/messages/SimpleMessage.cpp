@@ -48,10 +48,6 @@ uint8_t* SimpleMessage::serialize() {
     return message_buffer;
 }
 
-uint8_t SimpleMessage::getMessageCode() const {
-    return m_message_code;
-}
-
 /**
  * Function to deserialize data from a message buffer and construct a Simple Message object
  * @param message_buffer the serialized buffer with the message
@@ -72,3 +68,13 @@ SimpleMessage SimpleMessage::deserialize(uint8_t* message_buffer) {
 size_t SimpleMessage::getMessageSize() {
     return Config::MAX_PACKET_SIZE;
 }
+
+void SimpleMessage::setMMessageCode(uint8_t mMessageCode) {
+    m_message_code = mMessageCode;
+}
+
+uint8_t SimpleMessage::getMMessageCode() const {
+    return m_message_code;
+}
+
+
