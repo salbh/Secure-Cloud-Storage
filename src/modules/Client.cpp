@@ -1159,7 +1159,8 @@ int Client::run() {
                         continue;
                     }
                     // Check if the file exists and is a regular file
-                    if (!std::filesystem::exists(filename) && !std::filesystem::is_regular_file(filename)) {
+                    string file_path = "../data/" + m_username + "/" + filename;
+                    if (!FileManager::isFilePresent(file_path)) {
                         std::cout << "Client - File exists or is not a regular file.\n";
                         continue;
                     }
