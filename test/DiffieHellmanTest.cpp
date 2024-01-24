@@ -35,7 +35,7 @@ void serializeEphemeralKeyTest() {
     DiffieHellman * dh_instance = new DiffieHellman();
     EVP_PKEY *ephemeralKey = dh_instance->generateEphemeralKey();
     uint8_t* serialized_ephemeral_key = nullptr;
-    int serialized_ephemeral_key_size = -1;
+    int serialized_ephemeral_key_size = 0;
     int result = dh_instance->serializeEphemeralKey(ephemeralKey, serialized_ephemeral_key,
                                                     serialized_ephemeral_key_size);
     // Print the value returned by the serializeEphemeralKey to detect eventual errors correctly

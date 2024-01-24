@@ -13,6 +13,7 @@ private:
     uint8_t m_message_code{};
     char m_file_name[Config::FILE_NAME_LEN]{};
 
+
 public:
     Delete();
 
@@ -23,6 +24,8 @@ public:
     static Delete deserialize(uint8_t *buffer);
 
     static size_t getMessageSize();
+
+    const char *getFileName() const;
 
 };
 

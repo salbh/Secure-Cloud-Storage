@@ -10,9 +10,9 @@ private:
     string m_username;
     uint32_t m_counter{};
     SocketManager *m_socket;
-    unsigned char *m_session_key{};
+    unsigned char m_session_key[Config::AES_KEY_LEN];
 
-    int authentication(); //francesco
+    int authenticationRequest(); //francesco
 
     int listRequest(uint8_t *plaintext); //totore
 
@@ -24,7 +24,7 @@ private:
 
     int deleteRequest(uint8_t *plaintext); //luca
 
-    int logout(uint8_t *plaintext); //luca
+    int logoutRequest(uint8_t *plaintext); //luca
 
     void incrementCounter(); //totore
 

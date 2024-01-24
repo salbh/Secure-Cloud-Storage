@@ -102,7 +102,6 @@ int main() {
             }
             // Push a new thread to handle the client connection
             server_main.emplaceThread(socket_descriptor);
-
         }
     } catch (int exit_code) {
         // Handle the exception from the constructor

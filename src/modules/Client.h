@@ -18,13 +18,17 @@ class Client {
 
     string m_username;
     uint32_t m_counter;
-    SocketManager *m_socket;
-    unsigned char *m_session_key;
+    SocketManager* m_socket;
+    unsigned char m_session_key[Config::AES_KEY_LEN];
     EVP_PKEY* m_long_term_private_key;
 
-    int authentication();
+    int authenticationRequest();
     int listRequest();
     int downloadRequest(const string& filename);
+    int uploadRequest(string filename);
+    int logoutRequest();
+    int deleteRequest(string filename);
+
     void incrementCounter();
 
 public:
@@ -33,14 +37,7 @@ public:
 
     int run();
     void showMenu();
-
-    /**
-     * FRANCESCO: authentication() e rename()
-     * TOTORE: download() e list()
-     * LUCA: upload(), logout() e remove()
-     */
     void checkCounterValue();
-
     void checkCounterValue(Generic generic_message);
 };
 
