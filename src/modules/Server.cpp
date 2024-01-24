@@ -26,7 +26,6 @@ Server::Server(SocketManager *socket) {
 }
 
 Server::~Server() {
-    delete m_socket;
     OPENSSL_cleanse(m_session_key, Config::AES_KEY_LEN);
     delete[] m_socket;
 }
@@ -709,7 +708,6 @@ int Server::deleteRequest(uint8_t *plaintext) {
     incrementCounter();
 
 
-
     // 2) Send the delete confirmation message M2 (SimpleMessage "DELETE_ASK")
     SimpleMessage delete_msg2 = SimpleMessage(static_cast<uint8_t>(Message::DELETE_ASK));
 
@@ -745,7 +743,7 @@ int Server::deleteRequest(uint8_t *plaintext) {
 
     // Allocate memory for the buffer to receive the Generic message
     serialized_message = new uint8_t[Generic::getMessageSize(delete_msg3_len)];
-    if (m_socket->receive(serialized_message, delete_msg3_len) == -1) {
+    if (m_socket->receive(serialized_message, Generic::getMessageSize(delete_msg3_len)) == -1) {
         delete[] serialized_message;
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
@@ -783,9 +781,10 @@ int Server::deleteRequest(uint8_t *plaintext) {
     string file_path = "../data/" + m_username + "/";
 
     // Check if the file with file_name exists
-    if (!std::filesystem::exists(file_path+file_name) && !std::filesystem::is_regular_file(file_path+file_name)) {
+    if (!FileManager::isFilePresent(file_path+file_name)) {
         return static_cast<int>(Error::FILENAME_NOT_FOUND);
     }
+
 
     // Delete file and check the result
     if (remove((file_path + file_name).c_str())) {
@@ -941,7 +940,7 @@ void Server::run() {
 
                 case static_cast<uint8_t>(Message::LOGOUT_REQUEST):
                     logoutRequest(plaintext);
-                    return;
+                    break;
 
                 default:
                     cerr << "Server - Invalid command received." << endl;

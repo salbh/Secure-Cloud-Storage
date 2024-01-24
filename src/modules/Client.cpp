@@ -874,10 +874,10 @@ int Client::deleteRequest(string filename) {
     // 2) Receive the Delete M2 message (Delete Ask confirmation message. Simple Message)
     // Determine the size of the message to receive
     size_t delete_msg2_len = SimpleMessage::getMessageSize();
-
+    size_t generic_msg2_len = Generic::getMessageSize(delete_msg2_len);
     // Allocate memory for the buffer to receive the Generic message
-    serialized_message = new uint8_t[Generic::getMessageSize(delete_msg2_len)];
-    if (m_socket->receive(serialized_message, delete_msg2_len) == -1) {
+    serialized_message = new uint8_t[generic_msg2_len];
+    if (m_socket->receive(serialized_message, generic_msg2_len) == -1) {
         delete[] serialized_message;
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
@@ -958,7 +958,7 @@ int Client::deleteRequest(string filename) {
 
         // Allocate memory for the buffer to receive the Generic message
         serialized_message = new uint8_t[Generic::getMessageSize(delete_msg4_len)];
-        if (m_socket->receive(serialized_message, delete_msg4_len) == -1) {
+        if (m_socket->receive(serialized_message, Generic::getMessageSize(delete_msg4_len)) == -1) {
             delete[] serialized_message;
             return static_cast<int>(Return::RECEIVE_FAILURE);
         }
@@ -1157,7 +1157,7 @@ int Client::run() {
                     // Check if the file exists and is a regular file
                     string file_path = "../data/" + m_username + "/" + filename;
                     if (!FileManager::isFilePresent(file_path)) {
-                        std::cout << "Client - File exists or is not a regular file.\n";
+                        std::cout << "Client - File does not exists or is not a regular file.\n";
                         continue;
                     }
                     // Execute the upload operation and check the result
