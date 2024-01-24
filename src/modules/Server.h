@@ -24,7 +24,7 @@ private:
 
     int deleteRequest(uint8_t *plaintext); //luca
 
-    int logout(uint8_t *plaintext); //luca
+    int logoutRequest(uint8_t *plaintext); //luca
 
     void incrementCounter(); //totore
 

@@ -22,6 +22,7 @@ public:
     static constexpr unsigned int IV_LEN = 12;
     static constexpr long CHUNK_SIZE = 1024 * 1024; // 1 MB chunk size in bytes
     static constexpr uint32_t MAX_COUNTER_VALUE = 0xffffffff;
+    static constexpr size_t MAX_FILE_SIZE = 4UL * 1024 * 1024 * 1024;
 };
 
 #endif //SECURE_CLOUD_STORAGE_CONFIG_H

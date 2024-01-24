@@ -97,6 +97,32 @@ UploadM1 UploadM1::deserializeUploadM1(uint8_t *upload_message_buffer) {
 }
 
 
+/**
+ * Get the size of the UploadM1 message in bytes
+ * @return Returns the total size of an UploadM1 message.
+ */
+size_t UploadM1::getSizeUploadM1() {
+    size_t size = sizeof(m_message_code) + (Config::FILE_NAME_LEN * sizeof(char)) + sizeof(m_file_size);
+    return size;
+}
+
+/**
+ * Get the filename of the UploadM1 message
+ * @return returns the filname of the UploadM1 message
+ */
+const char *UploadM1::getFilename() const {
+    return m_filename;
+}
+
+/**
+ * Get the file size of the UploadM1 message
+ * @return returns the file size of the UploadM1 message
+ */
+uint32_t UploadM1::getFileSize() const {
+    return m_file_size;
+}
+
+
 
 //-------------------------------------------UPLOAD MESSAGE 3+i-------------------------------------------//
 
@@ -198,4 +224,12 @@ UploadMi UploadMi::deserializeUploadMi(uint8_t *upload_message_buffer, int chunk
 size_t UploadMi::getSizeUploadMi(int chunk_size) {
     size_t size = sizeof(m_message_code) + (chunk_size * sizeof(uint8_t));
     return size;
+}
+
+/**
+ * Get the chunk of the UploadMi message
+ * @return returns the chunk of the UploadMi message
+ */
+uint8_t *UploadMi::getChunk() const {
+    return m_chunk;
 }

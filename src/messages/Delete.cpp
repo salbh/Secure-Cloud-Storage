@@ -84,6 +84,14 @@ size_t Delete::getMessageSize() {
             sizeof(char) * Config::FILE_NAME_LEN;
 }
 
+/**
+ * Get the filename of the Delete message in bytes
+ * @return The filename of the Delete message
+ */
+const char *Delete::getFileName() const {
+    return m_file_name;
+}
+
 
 
 

@@ -127,9 +127,9 @@ streamsize FileManager::getLastChunkSize() const {
  * @param size The size of the buffer
  * @return 0 on success, -1 on failure
  */
-int FileManager::readChunk(char *buffer, streamsize size) {
+int FileManager::readChunk(uint8_t *buffer, streamsize size) {
     if (m_open_mode == READ) {
-        m_in_file.read(buffer, size);
+        m_in_file.read((char*)buffer, size);
     } else {
         cerr << "FileManager - Error while reading chunk" << endl;
         return -1;
@@ -143,9 +143,9 @@ int FileManager::readChunk(char *buffer, streamsize size) {
  * @param size The size of the data to be written
  * @return 0 on success, -1 on failure
  */
-int FileManager::writeChunk(const char *buffer, streamsize size) {
+int FileManager::writeChunk(uint8_t *buffer, streamsize size) {
     if (m_open_mode == WRITE) {
-        m_out_file.write(buffer, size);
+        m_out_file.write((char*)buffer, size);
     } else {
         cerr << "FileManager - Error while writing chunk" << endl;
         return -1;
