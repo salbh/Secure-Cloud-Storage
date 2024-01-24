@@ -854,13 +854,13 @@ int Client::deleteRequest(string filename) {
     // Create a Generic message with the current counter value
     Generic generic_msg1(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
-    if (generic_msg1.encrypt(m_session_key, serialized_message,static_cast<int>(delete_msg1_len)) == -1) {
+    if (generic_msg1.encrypt(m_session_key, serialized_message,Config::MAX_PACKET_SIZE) == -1) {
         cout << "Client - deleteRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize and Send Generic message (UploadM1 message)
     serialized_message = generic_msg1.serialize();
-    if (m_socket->send(serialized_message,Generic::getMessageSize(delete_msg1_len)) == -1) {
+    if (m_socket->send(serialized_message,Generic::getMessageSize(Config::MAX_PACKET_SIZE)) == -1) {
         return static_cast<int>(Return::SEND_FAILURE);
     }
 
