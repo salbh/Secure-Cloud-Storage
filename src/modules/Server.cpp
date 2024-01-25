@@ -573,8 +573,6 @@ int Server::uploadRequest(uint8_t *plaintext) {
         cout << "Server - uploadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
-    // Safely clean plaintext buffer
-    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
     // Serialize and Send Generic message (SimpleMessage)
     serialized_message = generic_msg2.serialize();
     if (m_socket->send(serialized_message,Generic::getMessageSize(upload_msg2_len)) == -1) {
@@ -640,8 +638,11 @@ int Server::uploadRequest(uint8_t *plaintext) {
         // Increment counter against replay attack
         incrementCounter();
 
+
         // Write the received chunk in the file
-        file_to_upload.writeChunk(upload_msg3i.getChunk(), chunk_size);
+        if (file_to_upload.writeChunk(upload_msg3i.getChunk(), chunk_size) == -1) {
+            return static_cast<int>(Return::WRITE_CHUNK_FAILURE);
+        }
 
         // Log upload status
         received_size += chunk_size;
