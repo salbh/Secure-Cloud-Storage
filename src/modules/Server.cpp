@@ -788,9 +788,8 @@ int Server::deleteRequest(uint8_t *plaintext) {
 
 
     // Delete file and check the result
-    if (remove((file_path + file_name).c_str())) {
+    if (remove((file_path + file_name).c_str()) == 0) {
         cout << "Server - deleteRequest() - file " << file_name << " successful deleted!\n"<< endl;
-
     }
     else {
         return static_cast<int>(Error::DELETE_FILE_ERROR);
