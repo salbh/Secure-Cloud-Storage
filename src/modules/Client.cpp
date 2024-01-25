@@ -926,7 +926,6 @@ int Client::logoutRequest() {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
 
-    cout << "Server - Logout successful" << endl;
     // Successful logout
     return static_cast<int>(Return::SUCCESS);
 }
