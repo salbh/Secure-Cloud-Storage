@@ -320,7 +320,8 @@ int Server::authenticationRequest() {
     }
 
     delete[] serialized_message;
-    incrementCounter();
+    //incrementCounter();
+    m_counter = 0;
 
     // Output result based on signature verification
     if (isSignatureVerified) {
@@ -343,7 +344,7 @@ int Server::listRequest(uint8_t *plaintext) {
     // Send message ListM2
 
     // Get the list of files in the user's folder
-    string files = FileManager::getFilesList("data/" + m_username);
+    string files = FileManager::getFilesList("../data/" + m_username);
     if (files == "error") {
         return static_cast<int>(Return::WRONG_PATH);
     }

@@ -913,12 +913,13 @@ int Client::deleteRequest(string filename) {
     // Let the user insert the delete confirmation
     string confirmation_code;
     cout << "Client - deleteRequest() - Do you really want to delete " << filename << "?\n" << endl;
-    cout << "1. Yes"
+    cout << "1. Yes\n"
             "2. No\n"
             "Insert Command Code: " << endl;
     cin >> confirmation_code;
     // Check if the confirmation string is valid
-    if (!FileManager::isNumeric(confirmation_code) || confirmation_code != "1" || confirmation_code != "2") {
+    cout << confirmation_code << endl;
+    if (!FileManager::isNumeric(confirmation_code) || stoi(confirmation_code) < 1 || stoi(confirmation_code) > 2) {
         cout << "Client - deleteRequest() - Error Delete Confirm Code" << endl;
         return static_cast<int>(Return::WRONG_DELETE_CONFIRM);
     }
@@ -1178,7 +1179,7 @@ int Client::run() {
                         cout << "Client - Logout failed with error code " << result << endl;
                     else
                         cout << "Client - User " << m_username << " Logout Successful!\n" << endl;
-                    break;
+                    return 0;
                   
                 case 7:
                     return 1;
