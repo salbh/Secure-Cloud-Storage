@@ -130,8 +130,8 @@ int SocketManager::send(uint8_t *message_buffer, size_t message_buffer_size) {
 int SocketManager::receive(uint8_t *message_buffer, size_t message_buffer_size) {
     int result = recv(m_socket, message_buffer, message_buffer_size, MSG_WAITALL);
     if (result == 0) {
-        cerr << "SocketManager - Error: connection closed!" << endl;
-        return -1;
+        cout << "SocketManager - Connection closed!" << endl;
+        return -2;
     } else if (result == -1) {
         cerr << "SocketManager - Error while receiving the message!" << endl;
         return -1;

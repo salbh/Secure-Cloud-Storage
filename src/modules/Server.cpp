@@ -28,7 +28,7 @@ Server::Server(SocketManager *socket) {
 
 Server::~Server() {
     OPENSSL_cleanse(m_session_key, Config::AES_KEY_LEN);
-    delete[] m_socket;
+    OPENSSL_cleanse(m_socket, sizeof(m_socket));
 }
 
 void Server::incrementCounter() {
@@ -961,8 +961,15 @@ void Server::run() {
         while (true) {
             // Allocate memory for the buffer to receive the first message
             auto *serialized_message = new uint8_t[message_size];
-            if (m_socket->receive(serialized_message, message_size) == -1) {
+            result = m_socket->receive(serialized_message, message_size);
+            if (result == -1) {
+                delete[] serialized_message;
                 cout << "Server - Error! Receive failed" << endl;
+                return;
+            }
+            if (result == -2) {
+                delete[] serialized_message;
+                cout << "Server - Connection Closed with " << m_username << endl;
                 return;
             }
             // Deserialize the received message

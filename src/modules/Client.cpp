@@ -1301,7 +1301,18 @@ int Client::run() {
                     return 0;
 
                 case 7:
-                    return 1;
+                    cout << "Client - Logout operation selected\n" << endl;
+                    // Execute the logout operation and check the result
+                    result = logoutRequest();
+                    if (result != static_cast<int>(Return::SUCCESS)) {
+                        cout << "Client - Logout failed with error code " << result << endl;
+                        return 0;
+                    }
+                    else {
+                        cout << "Client - User " << m_username << " Logout Successful!\n" << endl;
+                        return 1;
+                    }
+
                 }
 
                 default:
