@@ -21,6 +21,7 @@ void clientSignalHandler(int signal) {
     }
 }
 
+
 int main() {
 
     // register the signal handler for SIGINT and SIGPIPE
