@@ -595,8 +595,7 @@ int Client::uploadRequest(string filename) {
     // Check if the file exists and is a regular file
     string file_path = "../files/" + filename;
     if (!FileManager::isFilePresent(file_path)) {
-        cout << "Client uploadRequest() - File does not exists!\n";
-        return static_cast<int>(Error::FILENAME_NOT_FOUND);
+        return static_cast<int>(Return::FILE_NOT_FOUND);
     }
     // Open the file
     FileManager file_to_upload(file_path, FileManager::OpenMode::READ);
@@ -612,9 +611,6 @@ int Client::uploadRequest(string filename) {
     // 1) Create the M1 message (Upload request specifying the file name and file size) and increment counter
     UploadM1 upload_msg1(filename, file_to_upload.getFileSize());
     uint8_t* serialized_message = upload_msg1.serializeUploadM1();
-
-    // Determine the size of the message
-    size_t upload_msg1_len = UploadM1::getSizeUploadM1();
 
     // Create a Generic message with the current counter value
     Generic generic_msg1(m_counter);
@@ -672,7 +668,7 @@ int Client::uploadRequest(string filename) {
 
     // Check if the file already exist
     if (upload_msg2.getMMessageCode() == static_cast<uint8_t>(Result::NACK)) {
-        return static_cast<int>(Error::FILENAME_ALREADY_EXISTS);
+        return static_cast<int>(Return::FILE_ALREADY_EXISTS);
     }
 
     // Check the received message code
@@ -833,7 +829,7 @@ int Client::renameRequest(string old_file_name, string new_file_name) {
         return static_cast<int>(Return::FILE_NOT_FOUND);
     }
     if (renameM2.getMMessageCode() == static_cast<uint8_t>(Return::FILE_ALREADY_EXISTS)) {
-        cout << "Client - A file with the new file name already in the storage!" << endl;
+        cout << "Client - A file with the new file name already exists in the storage!" << endl;
         return static_cast<int>(Return::FILE_ALREADY_EXISTS);
     }
     if (renameM2.getMMessageCode() == static_cast<uint8_t>(Result::NACK)) {
@@ -1224,10 +1220,11 @@ int Client::run() {
                     }
                     // Execute the upload operation and check the result
                     result = uploadRequest(filename);
-                    if (result == static_cast<int>(Error::FILENAME_ALREADY_EXISTS)) {
+                    if (result == static_cast<int>(Return::FILE_ALREADY_EXISTS)) {
                         cout << "Client - File Already Exists! " << endl;
-                    }
-                    else if (result != static_cast<int>(Return::SUCCESS))
+                    } else if (result == static_cast<int>(Return::FILE_NOT_FOUND)) {
+                        cout << "Client - The file " << filename << " does not exist" << endl;
+                    } else if (result != static_cast<int>(Return::SUCCESS))
                         cout << "Client - Upload failed with error code " << result << endl;
                     else
                         cout << "Client - File " << filename << " uploaded successfully\n" << endl;
@@ -1274,10 +1271,10 @@ int Client::run() {
                     // Check if the file exists and is a regular file
                     string file_path = "../data/" + m_username + "/" + filename;
                     if (!FileManager::isFilePresent(file_path)) {
-                        std::cout << "Client - File does not exists or is not a regular file.\n";
+                        std::cout << "Client - File does not exist or is not a regular file.\n";
                         continue;
                     }
-                    // Execute the upload operation and check the result
+                    // Execute the delete operation and check the result
                     result = deleteRequest(filename);
                     if (result == static_cast<int>(Return::NO_DELETE_CONFIRM)) {
                         cout << "Client - Delete Aborted! " << endl;

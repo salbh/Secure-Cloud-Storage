@@ -367,7 +367,7 @@ int Server::listRequest(uint8_t *plaintext) {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg2.encrypt(m_session_key, serialized_message,
                              static_cast<int>(list_msg2_len)) == -1) {
-        cout << "Client - Error during encryption" << endl;
+        cout << "Server - listRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -383,7 +383,7 @@ int Server::listRequest(uint8_t *plaintext) {
 
     // If list size is 0 no other messages will be sent
     if (list_size == 0) {
-        cout << "FileManager - The user has no files in the folder." << endl;
+        cout << "Server - listRequest() - The user has no files in the folder." << endl;
         return static_cast<int>(Return::SUCCESS);
     }
 
@@ -402,7 +402,7 @@ int Server::listRequest(uint8_t *plaintext) {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg3.encrypt(m_session_key, serialized_message,
                              static_cast<int>(list_msg3_len)) == -1) {
-        cout << "Client - Error during encryption" << endl;
+        cout << "Server - listRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -457,7 +457,7 @@ int Server::downloadRequest(uint8_t *plaintext) {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg2.encrypt(m_session_key, serialized_message,
                              static_cast<int>(download_msg2_len)) == -1) {
-        cout << "Client - Error during encryption" << endl;
+        cout << "Server - downloadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -505,7 +505,7 @@ int Server::downloadRequest(uint8_t *plaintext) {
         // Encrypt the serialized plaintext and init the GenericMessage fields
         if (generic_msg3i.encrypt(m_session_key, serialized_message,
                                   static_cast<int>(download_msg3i_len)) == -1) {
-            cout << "Client - Error during encryption" << endl;
+            cout << "Server - downloadRequest() - " << endl;
             return static_cast<int>(Return::ENCRYPTION_FAILURE);
         }
         // Serialize Generic message
@@ -626,7 +626,7 @@ int Server::uploadRequest(uint8_t *plaintext) {
         Generic generic_msg3i = Generic::deserialize(serialized_message, upload_msg3i_len);
         delete[] serialized_message;
         // Allocate memory for the plaintext buffer
-        auto *plaintext = new uint8_t[upload_msg3i_len];
+        plaintext = new uint8_t[upload_msg3i_len];
         // Decrypt the Generic message to obtain the serialized message
         if (generic_msg3i.decrypt(m_session_key, plaintext) == -1) {
             return static_cast<int>(Return::DECRYPTION_FAILURE);
@@ -835,14 +835,10 @@ int Server::deleteRequest(uint8_t *plaintext) {
     // Increment counter against replay attack
     incrementCounter();
 
-
-
-
     // Check the received message code
     if (delete_msg3.getMMessageCode() != static_cast<uint8_t>(Message::DELETE_CONFIRM)) {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
-
 
     // Create the variables for file name and file path
     string file_name = (char*)delete_msg1.getFileName();
@@ -852,7 +848,6 @@ int Server::deleteRequest(uint8_t *plaintext) {
     if (!FileManager::isFilePresent(file_path+file_name)) {
         return static_cast<int>(Error::FILENAME_NOT_FOUND);
     }
-
 
     // Delete file and check the result
     if (remove((file_path + file_name).c_str()) == 0) {
@@ -914,7 +909,7 @@ int Server::logoutRequest(uint8_t *plaintext) {
 
     // Determine the size of the message to send
     size_t logout_msg2_len = SimpleMessage::getMessageSize();
-    // 2) Send the success message (if file does not exist) or fail message (if file exist) M2 (SimpleMessage)
+    // 2) Send the success message (if file does not exist) or fail message (if file exists) M2 (SimpleMessage)
     SimpleMessage logout_msg2(static_cast<uint8_t>(Result::ACK));;
     // Check if the file already exists, otherwise create the message to send
 
@@ -969,7 +964,7 @@ void Server::run() {
             }
             if (result == -2) {
                 delete[] serialized_message;
-                cout << "Server - Connection Closed with " << m_username << endl;
+                cout << "Server - Connection Closed with user " << m_username << endl;
                 return;
             }
             // Deserialize the received message
