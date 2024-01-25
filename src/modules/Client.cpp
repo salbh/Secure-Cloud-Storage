@@ -691,8 +691,15 @@ int Client::uploadRequest(string filename) {
     // 3) Create the M3+i messages (file chunk)
     // Determine the chunk size based on the file size and the number of chunks
     size_t chunk_size = Config::CHUNK_SIZE;
+
     // Allocate a buffer to store each file chunk
     uint8_t *chunk_buffer = new uint8_t [chunk_size];
+
+    // Set an interval for progress updates (e.g., every 10%)
+    size_t file_size = file_to_upload.getFileSize();
+    streamsize bytes_sent = 0;
+    const int progressUpdateInterval = 1;
+    int lastPrintedProgress = -1;
 
     // Iterate all file chunks and send to the Server
     for (size_t i = 0; i < file_to_upload.getChunksNum(); ++i) {
@@ -727,7 +734,20 @@ int Client::uploadRequest(string filename) {
 
         // Increment counter against replay attack
         incrementCounter();
+
+        // Compute and show the progress to the user
+        // Calculate upload progress percentage
+        bytes_sent += chunk_size;
+        int newProgress = static_cast<int>((static_cast<double>(bytes_sent) / static_cast<double>(file_size)) * 100);
+
+        // Print progress only if it has changed or reached the specified interval
+        if (newProgress != lastPrintedProgress && newProgress % progressUpdateInterval == 0) {
+            cout << "\rClient - uploadRequest() - Uploading: " << newProgress << "% complete" << flush;
+            lastPrintedProgress = newProgress;
+        }
     }
+    // Clear the progress message after completion
+    cout << "\rClient - uploadRequest() - Uploading: 100% complete" << endl;
 
     // Safely clean chunk buffer
     OPENSSL_cleanse(chunk_buffer, chunk_size);

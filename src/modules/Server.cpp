@@ -593,12 +593,16 @@ int Server::uploadRequest(uint8_t *plaintext) {
     //3) Receive the file chunks messages M3+i from the Client (UploadMi)
     // Prepare the file reception
     FileManager file_to_upload(file_path, FileManager::OpenMode::WRITE);
-    size_t file_size = upload_msg1.getFileSize() != 0 ? upload_msg1.getFileSize() : 4UL * 1024 * 1024 * 1024;
+    size_t file_size = upload_msg1.getFileSize();
     file_to_upload.initFileInfo(file_size);
 
     // Compute the chunk size and upload state variable to check the received size
     size_t chunk_size = Config::CHUNK_SIZE;
-    size_t received_size = 0;
+    streamsize bytes_received = 0;
+
+    // Set an interval for progress updates (e.g., every 10%)
+    const int progressUpdateInterval = 1;
+    int lastPrintedProgress = -1;
 
 
     // Receive all file chunks and write to the file
@@ -650,10 +654,19 @@ int Server::uploadRequest(uint8_t *plaintext) {
             return static_cast<int>(Return::WRITE_CHUNK_FAILURE);
         }
 
-        // Log upload status
-        //received_size += chunk_size;
-        //cout << "Server - uploadRequest() - Received " << received_size << "bytes/" << file_to_upload.getFileSize() << "bytes";
+        // Compute and show the progress to the user
+        // Calculate upload progress percentage
+        bytes_received += chunk_size;
+        int newProgress = static_cast<int>((static_cast<double>(bytes_received) / static_cast<double>(file_size)) * 100);
+
+        // Print progress only if it has changed or reached the specified interval
+        if (newProgress != lastPrintedProgress && newProgress % progressUpdateInterval == 0) {
+            cout << "\rServer - uploadRequest() - Uploading: " << newProgress << "% complete" << flush;
+            lastPrintedProgress = newProgress;
+        }
     }
+    // Clear the progress message after completion
+    cout << "\rServer - uploadRequest() - Uploading: 100% complete" << endl;
 
 
     // 4) Send the final packet M3+i+1 message (success file upload. Simple Message)
