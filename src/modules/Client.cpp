@@ -518,6 +518,10 @@ int Client::downloadRequest(const string& filename) {
     streamsize chunk_size = Config::CHUNK_SIZE;
     streamsize bytes_received = 0;
 
+    // Set an interval for progress updates (e.g., every 10%)
+    const int progressUpdateInterval = 1;
+    int lastPrintedProgress = -1;
+
     // Receive each chunk of the file from the Server
     for (size_t i = 0; i < downloaded_file.getChunksNum(); i++) {
         // If the chunk is the last, set the appropriate size
@@ -565,13 +569,18 @@ int Client::downloadRequest(const string& filename) {
             return static_cast<int>(Return::WRITE_CHUNK_FAILURE);
         }
         // Compute and show the progress to the user
-        bytes_received += chunk_size;
-        downloaded_file.getFileSize();
         // Calculate download progress percentage
-        int progress_percentage = static_cast<int>(
-                ((double)bytes_received / (double)downloaded_file_size) * 100);
-        cout << "Client - downloadRequest() - Downloading: " << progress_percentage << "% complete" << endl;
+        bytes_received += chunk_size;
+        int newProgress = static_cast<int>((static_cast<double>(bytes_received) / static_cast<double>(downloaded_file_size)) * 100);
+
+        // Print progress only if it has changed or reached the specified interval
+        if (newProgress != lastPrintedProgress && newProgress % progressUpdateInterval == 0) {
+            cout << "\rClient - downloadRequest() - Downloading: " << newProgress << "% complete" << flush;
+            lastPrintedProgress = newProgress;
+        }
     }
+    // Clear the progress message after completion
+    cout << "\rClient - downloadRequest() - Downloading: 100% complete" << endl;
 
     // Return success code if the end of the function is reached
     return static_cast<int>(Return::SUCCESS);
