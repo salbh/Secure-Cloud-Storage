@@ -653,15 +653,17 @@ int Client::uploadRequest(string filename) {
     if (generic_msg2.decrypt(m_session_key, plaintext) == -1) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
-    // Check the counter value to prevent replay attacks
-    if (m_counter != generic_msg2.getCounter()) {
-        return static_cast<int>(Return::WRONG_COUNTER);
-    }
+
     // Deserialize the upload message 2 received (Simple Message)
     SimpleMessage upload_msg2 = SimpleMessage::deserialize(plaintext);
     // Safely clean plaintext buffer
     OPENSSL_cleanse(plaintext, upload_msg2_len);
     delete[] plaintext;
+
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg2.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
 
     // Increment counter against replay attack
     incrementCounter();
@@ -680,7 +682,6 @@ int Client::uploadRequest(string filename) {
     // 3) Create the M3+i messages (file chunk)
     // Determine the chunk size based on the file size and the number of chunks
     size_t chunk_size = Config::CHUNK_SIZE;
-    //size_t chunk_size = file_to_upload.getFileSize() / file_to_upload.getChunksNum() ;
     // Allocate a buffer to store each file chunk
     uint8_t *chunk_buffer = new uint8_t [chunk_size];
 
@@ -745,15 +746,17 @@ int Client::uploadRequest(string filename) {
     if (generic_msg3i1.decrypt(m_session_key, plaintext) == -1) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
-    // Check the counter value to prevent replay attacks
-    if (m_counter != generic_msg3i1.getCounter()) {
-        return static_cast<int>(Return::WRONG_COUNTER);
-    }
+
     // Deserialize the upload message 2 received (Simple Message)
     SimpleMessage upload_msg3i1 = SimpleMessage::deserialize(plaintext);
     // Safely clean plaintext buffer
     OPENSSL_cleanse(plaintext, upload_msg3i1_len);
     delete[] plaintext;
+
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg3i1.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
 
     // Increment counter against replay attack
     incrementCounter();
@@ -897,15 +900,17 @@ int Client::logoutRequest() {
     if (generic_msg2.decrypt(m_session_key, plaintext) == -1) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
-    // Check the counter value to prevent replay attacks
-    if (m_counter != generic_msg2.getCounter()) {
-        return static_cast<int>(Return::WRONG_COUNTER);
-    }
+
     // Deserialize the logout message 2 received (Simple Message)
     SimpleMessage logout_msg2 = SimpleMessage::deserialize(plaintext);
     // Safely clean plaintext buffer
     OPENSSL_cleanse(plaintext, logout_msg2_len);
     delete[] plaintext;
+
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg2.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
 
     // Check the received message code
     if (logout_msg2.getMMessageCode() != static_cast<uint8_t>(Result::ACK)) {
@@ -977,15 +982,17 @@ int Client::deleteRequest(string filename) {
     if (generic_msg2.decrypt(m_session_key, plaintext) == -1) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
-    // Check the counter value to prevent replay attacks
-    if (m_counter != generic_msg2.getCounter()) {
-        return static_cast<int>(Return::WRONG_COUNTER);
-    }
+
     // Deserialize the delete message 2 received (Simple Message)
     SimpleMessage delete_msg2 = SimpleMessage::deserialize(plaintext);
     // Safely clean plaintext buffer
     OPENSSL_cleanse(plaintext, delete_msg2_len);
     delete[] plaintext;
+
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg2.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
 
     // Increment counter against replay attack
     incrementCounter();
@@ -1074,16 +1081,16 @@ int Client::deleteRequest(string filename) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
 
-    // Check the counter value to prevent replay attacks
-    if (m_counter != generic_msg4.getCounter()) {
-        return static_cast<int>(Return::WRONG_COUNTER);
-    }
-
     // Deserialize the message received (Simple Message)
     SimpleMessage delete_msg4 = SimpleMessage::deserialize(plaintext);
     // Safely clean plaintext buffer
     OPENSSL_cleanse(plaintext, delete_msg4_len);
     delete[] plaintext;
+
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg4.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
 
     // Increment counter against replay attack
     incrementCounter();

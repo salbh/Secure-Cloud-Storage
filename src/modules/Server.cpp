@@ -598,7 +598,6 @@ int Server::uploadRequest(uint8_t *plaintext) {
 
     // Compute the chunk size and upload state variable to check the received size
     size_t chunk_size = Config::CHUNK_SIZE;
-    //size_t chunk_size = file_to_upload.getFileSize() / file_to_upload.getChunksNum();
     size_t received_size = 0;
 
 
@@ -630,15 +629,17 @@ int Server::uploadRequest(uint8_t *plaintext) {
         if (generic_msg3i.decrypt(m_session_key, plaintext) == -1) {
             return static_cast<int>(Return::DECRYPTION_FAILURE);
         }
-        // Check the counter value to prevent replay attacks
-        if (m_counter != generic_msg3i.getCounter()) {
-            return static_cast<int>(Return::WRONG_COUNTER);
-        }
+
         // Deserialize the upload message 3+i received (UploadMi)
         UploadMi upload_msg3i = UploadMi::deserializeUploadMi(plaintext, chunk_size);
         // Safely clean plaintext buffer
         OPENSSL_cleanse(plaintext, upload_msg3i_len);
         delete[] plaintext;
+
+        // Check the counter value to prevent replay attacks
+        if (m_counter != generic_msg3i.getCounter()) {
+            return static_cast<int>(Return::WRONG_COUNTER);
+        }
 
         // Increment counter against replay attack
         incrementCounter();
@@ -821,15 +822,17 @@ int Server::deleteRequest(uint8_t *plaintext) {
     if (generic_msg3.decrypt(m_session_key, plaintext) == -1) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
-    // Check the counter value to prevent replay attacks
-    if (m_counter != generic_msg3.getCounter()) {
-        return static_cast<int>(Return::WRONG_COUNTER);
-    }
+
     // Deserialize the delete message 2 received (Simple Message)
     SimpleMessage delete_msg3 = SimpleMessage::deserialize(plaintext);
     // Safely clean plaintext buffer
     OPENSSL_cleanse(plaintext, delete_msg3_len);
     delete[] plaintext;
+
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg3.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
 
     // Increment counter against replay attack
     incrementCounter();
