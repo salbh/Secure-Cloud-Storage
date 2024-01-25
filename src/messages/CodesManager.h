@@ -24,21 +24,22 @@ enum class Message : int {
     LIST_ACK = 12,
     LIST_RESPONSE = 13,
     RENAME_REQUEST = 14,
-    LOGOUT_REQUEST = 15
+    LOGOUT_REQUEST = 15,
+    NO_DELETE_CONFIRM
 };
 
 // Error message code
 enum class Error : int {
-    USERNAME_NOT_FOUND = 16,
-    FILENAME_ALREADY_EXISTS = 17,
-    FILE_NOT_FOUND = 18,
+    USERNAME_NOT_FOUND = 17,
+    FILENAME_ALREADY_EXISTS,
+    FILE_NOT_FOUND,
     FILENAME_NOT_FOUND,
     DELETE_FILE_ERROR
 };
 
 // Return code
 enum class Return : int {
-    SUCCESS = 21,
+    SUCCESS = 22,
     AUTHENTICATION_SUCCESS,
     AUTHENTICATION_FAILURE,
     ENCRYPTION_FAILURE,
@@ -53,7 +54,6 @@ enum class Return : int {
     READ_CHUNK_FAILURE,
     WRITE_CHUNK_FAILURE,
     WRONG_FILE_SIZE,
-    WRONG_DELETE_CONFIRM,
     NO_DELETE_CONFIRM,
     RENAME_FAILURE
 };
