@@ -554,7 +554,7 @@ int Server::uploadRequest(uint8_t *plaintext) {
     string file_path = "../data/" + m_username + "/" + (string)upload_msg1.getFilename();
     if (FileManager::isFilePresent(file_path)) {
         cout << "Server - uploadRequest() - Error during upload request! File already exists" << endl;
-        return static_cast<int>(Error::FILENAME_ALREADY_EXISTS);
+        upload_msg2 = SimpleMessage(static_cast<uint8_t>(Result::NACK));
     }
     else {
         // Create success message to send to the Client
@@ -585,6 +585,10 @@ int Server::uploadRequest(uint8_t *plaintext) {
     // Increment counter against replay attack
     incrementCounter();
 
+    if (upload_msg2.getMMessageCode() == static_cast<uint8_t>(Result::NACK)) {
+        return static_cast<int>(Error::FILENAME_ALREADY_EXISTS);
+    }
+
 
     //3) Receive the file chunks messages M3+i from the Client (UploadMi)
     // Prepare the file reception
@@ -593,7 +597,8 @@ int Server::uploadRequest(uint8_t *plaintext) {
     file_to_upload.initFileInfo(file_size);
 
     // Compute the chunk size and upload state variable to check the received size
-    size_t chunk_size = file_to_upload.getFileSize() / file_to_upload.getChunksNum();
+    size_t chunk_size = Config::CHUNK_SIZE;
+    //size_t chunk_size = file_to_upload.getFileSize() / file_to_upload.getChunksNum();
     size_t received_size = 0;
 
 
@@ -632,7 +637,7 @@ int Server::uploadRequest(uint8_t *plaintext) {
         // Deserialize the upload message 3+i received (UploadMi)
         UploadMi upload_msg3i = UploadMi::deserializeUploadMi(plaintext, chunk_size);
         // Safely clean plaintext buffer
-        OPENSSL_cleanse(plaintext, upload_msg2_len);
+        OPENSSL_cleanse(plaintext, upload_msg3i_len);
         delete[] plaintext;
 
         // Increment counter against replay attack
@@ -645,8 +650,8 @@ int Server::uploadRequest(uint8_t *plaintext) {
         }
 
         // Log upload status
-        received_size += chunk_size;
-        cout << "Server - uploadRequest() - Received " << received_size << "bytes/" << file_to_upload.getFileSize() << "bytes";
+        //received_size += chunk_size;
+        //cout << "Server - uploadRequest() - Received " << received_size << "bytes/" << file_to_upload.getFileSize() << "bytes";
     }
 
 
@@ -770,6 +775,9 @@ int Server::deleteRequest(uint8_t *plaintext) {
 
     // Increment counter against replay attack
     incrementCounter();
+
+
+
 
     // Check the received message code
     if (delete_msg3.getMMessageCode() != static_cast<uint8_t>(Message::DELETE_CONFIRM)) {
@@ -948,7 +956,7 @@ void Server::run() {
             }
         }
     } catch (int error_code) {
-        // To add checks on different errors thrown by the functions
+        cout << "Server - Operation failed with error code: " << error_code << endl;
     } catch (const exception &e) {
         cerr << "Server - Exception in run: " << e.what() << endl;
     }
