@@ -453,7 +453,7 @@ int Client::downloadRequest(const string& filename) {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,
                              Config::MAX_PACKET_SIZE) == -1) {
-        cout << "Client - listRequest() - Error during encryption" << endl;
+        cout << "Client - downloadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -570,7 +570,7 @@ int Client::downloadRequest(const string& filename) {
         // Calculate download progress percentage
         int progress_percentage = static_cast<int>(
                 ((double)bytes_received / (double)downloaded_file_size) * 100);
-        cout << "Client - listRequest() - Downloading: " << progress_percentage << "% complete" << endl;
+        cout << "Client - downloadRequest() - Downloading: " << progress_percentage << "% complete" << endl;
     }
 
     // Return success code if the end of the function is reached
@@ -1234,14 +1234,14 @@ int Client::run() {
                 case 4: {
                     cout << "Client - Rename File operation selected\n" << endl;
                     string old_file_name;
-                    cout << "Client - Insert the name of the file that you want to rename: " << endl;
+                    cout << "Client - Insert the name of the file that you want to rename: ";
                     cin >> old_file_name;
                     if (!FileManager::isStringValid(old_file_name)) {
                         cout << "Client - Invalid File Name" << endl;
                         continue;
                     }
                     string new_file_name;
-                    cout << "Client - Insert the new file name: " << endl;
+                    cout << "Client - Insert the new file name: ";
                     cin >> new_file_name;
                     if (!FileManager::isStringValid(old_file_name)) {
                         cout << "Client - Invalid New File Name" << endl;

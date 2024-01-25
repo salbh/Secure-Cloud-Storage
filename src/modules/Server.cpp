@@ -473,7 +473,6 @@ int Server::downloadRequest(uint8_t *plaintext) {
 
     // If the file it is not found, no other messages are sent
     if (download_msg2.getFileSize() == 0) {
-        delete[] file_to_send;
         return static_cast<int>(Return::FILE_NOT_FOUND);
     }
 
