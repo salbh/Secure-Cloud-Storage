@@ -585,8 +585,15 @@ int Client::downloadRequest(const string& filename) {
  * @return An integer value representing the success or failure of the upload process.
  */
 int Client::uploadRequest(string filename) {
+    // Check if the file exists and is a regular file
+    string file_path = "../files/" + filename;
+    if (!FileManager::isFilePresent(file_path)) {
+        cout << "Client uploadRequest() - File does not exists!\n";
+        return static_cast<int>(Error::FILENAME_NOT_FOUND);
+    }
     // Open the file
-    FileManager file_to_upload(filename, FileManager::OpenMode::READ);
+    FileManager file_to_upload(file_path, FileManager::OpenMode::READ);
+
 
     // Check the file size (0 of greater than 4GB)
     if (file_to_upload.getFileSize() == 0 || file_to_upload.getFileSize() > Config::MAX_FILE_SIZE) {
@@ -609,8 +616,6 @@ int Client::uploadRequest(string filename) {
         cout << "Client - uploadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
-    // Safely clean plaintext buffer
-    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
     // Serialize and Send Generic message (UploadM1 message)
     serialized_message = generic_msg1.serialize();
     if (m_socket->send(serialized_message,Generic::getMessageSize(upload_msg1_len)) == -1) {
@@ -627,10 +632,11 @@ int Client::uploadRequest(string filename) {
     // 2) Receive the result message M2 message (success or failed request. Simple Message) and increment counter
     // Determine the size of the message to receive
     size_t upload_msg2_len = SimpleMessage::getMessageSize();
+    size_t generic_msg2_len = Generic::getMessageSize(upload_msg2_len);
 
     // Allocate memory for the buffer to receive the Generic message
-    serialized_message = new uint8_t[Generic::getMessageSize(upload_msg2_len)];
-    if (m_socket->receive(serialized_message, upload_msg2_len) == -1) {
+    serialized_message = new uint8_t[generic_msg2_len];
+    if (m_socket->receive(serialized_message, generic_msg2_len) == -1) {
         delete[] serialized_message;
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
@@ -691,8 +697,6 @@ int Client::uploadRequest(string filename) {
             cout << "Client - uploadRequest() - Error during encryption" << endl;
             return static_cast<int>(Return::ENCRYPTION_FAILURE);
         }
-        // Safely clean plaintext buffer
-        OPENSSL_cleanse(serialized_message, upload_msg3i_len);
         // Serialize Generic message
         serialized_message = generic_msg3i.serialize();
         // Send the serialized Generic message to the server
@@ -713,10 +717,11 @@ int Client::uploadRequest(string filename) {
     // 4) Receive the final packet M3+i+1 message (success or failed file upload. Simple Message)
     // Determine the size of the message to receive
     size_t upload_msg3i1_len = SimpleMessage::getMessageSize();
+    size_t generic_msg3i1_len = Generic::getMessageSize(upload_msg3i1_len);
 
     // Allocate memory for the buffer to receive the Generic message
-    serialized_message = new uint8_t[Generic::getMessageSize(upload_msg3i1_len)];
-    if (m_socket->receive(serialized_message, upload_msg3i1_len) == -1) {
+    serialized_message = new uint8_t[generic_msg3i1_len];
+    if (m_socket->receive(serialized_message, generic_msg3i1_len) == -1) {
         delete[] serialized_message;
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
@@ -725,7 +730,7 @@ int Client::uploadRequest(string filename) {
     Generic generic_msg3i1 = Generic::deserialize(serialized_message, upload_msg3i1_len);
     delete[] serialized_message;
     // Allocate memory for the plaintext buffer
-    plaintext = new uint8_t[upload_msg2_len];
+    plaintext = new uint8_t[upload_msg3i1_len];
     // Decrypt the Generic message to obtain the serialized message
     if (generic_msg3i1.decrypt(m_session_key, plaintext) == -1) {
         return static_cast<int>(Return::DECRYPTION_FAILURE);
@@ -1122,11 +1127,6 @@ int Client::run() {
                     // Check if the filename is valid
                     if (!FileManager::isStringValid(filename)) {
                         cout << "Client - Invalid File Name" << endl;
-                        continue;
-                    }
-                    // Check if the file exists and is a regular file
-                    if (!std::filesystem::exists(filename) && !std::filesystem::is_regular_file(filename)) {
-                        std::cout << "Client - File exists or is not a regular file.\n";
                         continue;
                     }
                     // Execute the upload operation and check the result

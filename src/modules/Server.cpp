@@ -609,10 +609,11 @@ int Server::uploadRequest(uint8_t *plaintext) {
 
         // Determine the size of the message to receive
         size_t upload_msg3i_len = UploadMi::getSizeUploadMi(chunk_size);
+        size_t generic_msg3i_len = Generic::getMessageSize(upload_msg3i_len);
 
         // Allocate memory for the buffer to receive the Generic message
-        serialized_message = new uint8_t[Generic::getMessageSize(upload_msg3i_len)];
-        if (m_socket->receive(serialized_message, upload_msg3i_len) == -1) {
+        serialized_message = new uint8_t[generic_msg3i_len];
+        if (m_socket->receive(serialized_message, generic_msg3i_len) == -1) {
             delete[] serialized_message;
             return static_cast<int>(Return::RECEIVE_FAILURE);
         }
@@ -663,8 +664,6 @@ int Server::uploadRequest(uint8_t *plaintext) {
         cout << "Server - uploadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
-    // Safely clean plaintext buffer
-    OPENSSL_cleanse(serialized_message, Config::MAX_PACKET_SIZE);
     // Serialize and Send Generic message (SimpleMessage)
     serialized_message = generic_msg3i1.serialize();
     if (m_socket->send(serialized_message,Generic::getMessageSize(upload_msg3i1_len)) == -1) {
