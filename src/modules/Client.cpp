@@ -16,6 +16,7 @@
 #include "List.h"
 #include "Download.h"
 #include "Upload.h"
+#include "Rename.h"
 #include "Delete.h"
 #include "DiffieHellman.h"
 #include "Authentication.h"
@@ -770,6 +771,77 @@ int Client::uploadRequest(string filename) {
     return static_cast<int>(Return::SUCCESS);
 }
 
+int Client::renameRequest(string old_file_name, string new_file_name) {
+
+    // RenameM1
+    Rename renameM1(old_file_name, new_file_name);
+
+    uint8_t* serialized_message = renameM1.serializeRenameMessage();
+    size_t renameM1_length = Rename::getMessageSize();
+
+    Generic generic_msg1(m_counter);
+
+    if(generic_msg1.encrypt(m_session_key, serialized_message, static_cast<int>(renameM1_length)) == -1) {
+        cout << "Client - renameRequest() - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+
+    serialized_message = generic_msg1.serialize();
+    if(m_socket->send(serialized_message, Generic::getMessageSize(renameM1_length)) == -1) {
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+
+    delete[] serialized_message;
+
+    incrementCounter();
+
+    // RenameM2
+
+    size_t renameM2_length = SimpleMessage::getMessageSize();
+    size_t generic_msg2_length = Generic::getMessageSize(renameM2_length);
+
+    serialized_message = new uint8_t [generic_msg2_length];
+
+    if (m_socket->receive(serialized_message, generic_msg2_length) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::RECEIVE_FAILURE);
+    }
+    // Deserialize the received Generic message
+    Generic generic_msg2 = Generic::deserialize(serialized_message, renameM2_length);
+    delete[] serialized_message;
+
+    // Allocate memory for the plaintext buffer
+    auto *plaintext = new uint8_t[renameM2_length];
+    // Decrypt the Generic message to obtain the serialized message
+    if (generic_msg2.decrypt(m_session_key, plaintext) == -1) {
+        return static_cast<int>(Return::DECRYPTION_FAILURE);
+    }
+    SimpleMessage renameM2 = SimpleMessage::deserialize(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, renameM2_length);
+    delete[] plaintext;
+    // Check the counter value to prevent replay attacks
+    if (m_counter != generic_msg2.getCounter()) {
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+
+    incrementCounter();
+
+    // Check the received message code
+    if (renameM2.getMMessageCode() == static_cast<uint8_t>(Return::FILE_NOT_FOUND)) {
+        cout << "Client - File not found in the storage!" << endl;
+        return static_cast<int>(Return::FILE_NOT_FOUND);
+    }
+    if (renameM2.getMMessageCode() == static_cast<uint8_t>(Return::FILE_ALREADY_EXISTS)) {
+        cout << "Client - A file with the new file name already in the storage!" << endl;
+        return static_cast<int>(Return::FILE_ALREADY_EXISTS);
+    }
+    if (renameM2.getMMessageCode() == static_cast<uint8_t>(Result::NACK)) {
+        cerr << "Client - Error in renaming the file!" << endl;
+        return static_cast<int>(Return::RENAME_FAILURE);
+    }
+    return static_cast<int>(Return::SUCCESS);
+}
 
 /**
  * Client side logout request operation
@@ -1162,11 +1234,31 @@ int Client::run() {
                     break;
                 }
 
-                case 4:
+                case 4: {
                     cout << "Client - Rename File operation selected\n" << endl;
+                    string old_file_name;
+                    cout << "Client - Insert the name of the file that you want to rename: " << endl;
+                    cin >> old_file_name;
+                    if (!FileManager::isStringValid(old_file_name)) {
+                        cout << "Client - Invalid File Name" << endl;
+                        continue;
+                    }
+                    string new_file_name;
+                    cout << "Client - Insert the new file name: " << endl;
+                    cin >> new_file_name;
+                    if (!FileManager::isStringValid(old_file_name)) {
+                        cout << "Client - Invalid New File Name" << endl;
+                        continue;
+                    }
+                    // Execute the rename operation and check the result
+                    result = renameRequest(old_file_name, new_file_name);
+                    if (result != static_cast<int>(Return::SUCCESS))
+                        cout << "Client - Rename failed with error code " << result << endl;
+                    else
+                        cout << "Client - Name of the File " << old_file_name << " changed successfully in " <<
+                             new_file_name << endl;
                     break;
-
-
+                }
                 case 5: {
                     cout << "Client - Delete File operation selected\n" << endl;
                     // Let the user insert the file name

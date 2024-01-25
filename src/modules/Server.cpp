@@ -8,6 +8,7 @@
 #include "List.h"
 #include "Download.h"
 #include "Upload.h"
+#include "Rename.h"
 #include "FileManager.h"
 #include "SimpleMessage.h"
 #include "Delete.h"
@@ -688,7 +689,65 @@ int Server::uploadRequest(uint8_t *plaintext) {
 }
 
 int Server::renameRequest(uint8_t *plaintext) {
-    return 0;
+
+    //RenameM1
+
+    Rename renameM1 = Rename::deserializeRenameMessage(plaintext);
+    // Safely clean plaintext buffer
+    OPENSSL_cleanse(plaintext, SimpleMessage::getMessageSize());
+    delete[] plaintext;
+
+    incrementCounter();
+
+    //RenameM2
+
+    // Obtain file path
+    string old_file_name_path = "../data/" + m_username + "/" + (string) renameM1.getMOldFilename();
+    string new_file_name_path = "../data/" + m_username + "/" + (string) renameM1.getMNewFilename();
+    SimpleMessage simple_message;
+    // Check if the file is present and correct
+    if (!FileManager::isFilePresent(old_file_name_path)){
+        // If the file is not present create the message with FILE_NOT_FOUND
+        cout << "RenameM1 - File not found!" << endl;
+        simple_message = SimpleMessage(static_cast<uint8_t>(Return::FILE_NOT_FOUND));
+    } else if (FileManager::isFilePresent(new_file_name_path)) {
+        // If the file is already present create the message with FILE_ALREADY_EXISTS
+        cout << "RenameM1 - File already exists!" << endl;
+        simple_message = SimpleMessage(static_cast<uint8_t>(Return::FILE_ALREADY_EXISTS));
+    } else {
+        if(rename((old_file_name_path).c_str(), (new_file_name_path).c_str()) != 0) {
+            cout << "RenameM1 - Rename failed!" << endl;
+            simple_message = SimpleMessage(static_cast<int>(Result::NACK));
+        } else {
+            cout << "RenameM1 - Rename success!" << endl;
+            simple_message = SimpleMessage(static_cast<int>(Result::ACK));
+        }
+    }
+
+    size_t simple_message_length = SimpleMessage::getMessageSize();
+    uint8_t* serialized_message = simple_message.serialize();
+
+    Generic generic_msg2(m_counter);
+
+    if (generic_msg2.encrypt(m_session_key, serialized_message,
+                             static_cast<int>(simple_message_length)) == -1) {
+        cout << "Client - Error during encryption" << endl;
+        return static_cast<int>(Return::ENCRYPTION_FAILURE);
+    }
+
+    serialized_message = generic_msg2.serialize();
+    if (m_socket->send(serialized_message,
+                       Generic::getMessageSize(simple_message_length)) == -1) {
+        delete[] serialized_message;
+        return static_cast<int>(Return::SEND_FAILURE);
+    }
+    delete[] serialized_message;
+
+    incrementCounter();
+
+    cout << "RenameM2 ACK/NACK message sent to the client!" << endl;
+    // Return success code if the end of the function is reached
+    return static_cast<int>(Return::SUCCESS);
 }
 
 

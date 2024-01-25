@@ -85,3 +85,20 @@ Rename Rename::deserializeRenameMessage(uint8_t* message_buffer) {
     // Return the deserialized Rename message
     return renameMessage;
 }
+
+size_t Rename::getMessageSize() {
+    size_t message_size = 0;
+    message_size += sizeof(m_message_code);
+    message_size += + (Config::FILE_NAME_LEN * sizeof(char));
+    message_size += + (Config::FILE_NAME_LEN * sizeof(char));
+
+    return message_size;
+}
+
+const char *Rename::getMOldFilename() const {
+    return m_old_filename;
+}
+
+const char *Rename::getMNewFilename() const {
+    return m_new_filename;
+}

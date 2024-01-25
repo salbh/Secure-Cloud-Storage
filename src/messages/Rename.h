@@ -14,7 +14,11 @@ public:
     Rename();
     Rename(const std::string &old_filename, const std::string &new_filename);
     uint8_t *serializeRenameMessage();
-    Rename deserializeRenameMessage(uint8_t *message_buffer);
+    static Rename deserializeRenameMessage(uint8_t *message_buffer);
+
+    const char *getMOldFilename() const;
+    const char *getMNewFilename() const;
+    static size_t getMessageSize();
 };
 
 #endif //SECURE_CLOUD_STORAGE_RENAME_H

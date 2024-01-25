@@ -26,6 +26,7 @@ class Client {
     int listRequest();
     int downloadRequest(const string& filename);
     int uploadRequest(string filename);
+    int renameRequest(string file_name, string new_file_name);
     int logoutRequest();
     int deleteRequest(string filename);
 
@@ -39,6 +40,8 @@ public:
     void showMenu();
     void checkCounterValue();
     void checkCounterValue(Generic generic_message);
+
+
 };
 
 
