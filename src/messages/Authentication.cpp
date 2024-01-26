@@ -301,7 +301,6 @@ const uint8_t *AuthenticationM3::getMEncryptedDigitalSignature() const {
 bool AuthenticationM3::checkCounter(uint32_t counter) {
     uint32_t aad_counter;
     memcpy(&aad_counter, m_aad, Config::AAD_LEN);
-    ntohl(counter); // Convert from network byte order to host byte order
     return (aad_counter == counter);
 }
 
@@ -401,7 +400,6 @@ AuthenticationM4 AuthenticationM4::deserialize(uint8_t *message_buffer) {
 bool AuthenticationM4::checkCounter(uint32_t counter) {
     uint32_t aad_counter;
     memcpy(&aad_counter, m_aad, Config::AAD_LEN);
-    ntohl(counter); // Convert from network byte order to host byte order
     return (aad_counter == counter);
 }
 
