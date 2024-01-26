@@ -865,7 +865,7 @@ int Client::renameRequest(string old_file_name, string new_file_name) {
         return static_cast<int>(Return::FILE_ALREADY_EXISTS);
     }
     if (renameM2.getMMessageCode() == static_cast<uint8_t>(Result::NACK)) {
-        cerr << "Client - Error in renaming the file!" << endl;
+        cout << "Client - Error in renaming the file!" << endl;
         return static_cast<int>(Return::RENAME_FAILURE);
     }
     return static_cast<int>(Return::SUCCESS);
@@ -1224,9 +1224,9 @@ int Client::run() {
                     cout << "Client - Insert the name of the file to download: ";
                     cin >> filename;
                     // Check if the filename is valid
-                    while (!FileManager::isStringValid(filename)) {
-                        cout << "Client - Insert the name of the file to download: ";
-                        cin >> filename;
+                    if (!FileManager::isStringValid(filename)) {
+                        cout << "Client - Invalid file name" << endl;
+                        continue;
                     }
                     // Execute the download operation and check the result
                     result = downloadRequest(filename);
@@ -1278,7 +1278,7 @@ int Client::run() {
                     string new_file_name;
                     cout << "Client - Insert the new file name: ";
                     cin >> new_file_name;
-                    if (!FileManager::isStringValid(old_file_name)) {
+                    if (!FileManager::isStringValid(new_file_name)) {
                         cout << "Client - Invalid New File Name" << endl;
                         continue;
                     }

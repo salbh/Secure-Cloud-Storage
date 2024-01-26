@@ -39,14 +39,6 @@ uint8_t *ListM2::serialize() {
     position += sizeof(m_message_code);
 
     memcpy(buffer + position, &m_list_size, sizeof(m_list_size));
-    position += sizeof(m_list_size);
-
-    // Add randomness to the buffer using RAND_bytes
-    if (RAND_bytes(buffer + position, Config::MAX_PACKET_SIZE - position) != 1) {
-        cerr << "Delete - Error during serialization: RAND_bytes failed" << endl;
-        delete[] buffer; // Release memory in case of failure
-        return nullptr;
-    }
 
     return buffer;
 }
@@ -116,7 +108,7 @@ ListM3::~ListM3() {
  * @return A dynamically allocated byte buffer containing the serialized message
  */
 uint8_t *ListM3::serialize(uint32_t list_size) {
-    auto *buffer = new(nothrow) uint8_t[Config::MAX_PACKET_SIZE];
+    auto *buffer = new(nothrow) uint8_t[ListM3::getMessageSize(list_size)];
     if (!buffer) {
         cerr << "ListM3 - Error during serialization: Failed to allocate memory" << endl;
         return nullptr;
@@ -127,15 +119,6 @@ uint8_t *ListM3::serialize(uint32_t list_size) {
 
     if (list_size > 0) {
         memcpy(buffer + position, m_file_list, list_size);
-        position += sizeof(list_size);
-        // Add randomness to the buffer using RAND_bytes
-        if (RAND_bytes(buffer + position, Config::MAX_PACKET_SIZE - position) != 1) {
-            cerr << "Delete - Error during serialization: RAND_bytes failed" << endl;
-            delete[] buffer; // Release memory in case of failure
-            return nullptr;
-        }
-    } else {
-        return nullptr;
     }
     return buffer;
 }

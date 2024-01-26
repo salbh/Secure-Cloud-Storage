@@ -49,14 +49,6 @@ uint8_t* Rename::serializeRenameMessage() {
     current_buffer_position += Config::FILE_NAME_LEN * sizeof(char);
     // Copy the new filename into the buffer
     memcpy(message_buffer + current_buffer_position, &m_new_filename, Config::FILE_NAME_LEN * sizeof(char));
-    current_buffer_position += Config::FILE_NAME_LEN * sizeof(char);
-    // Generate random bytes to fill the remaining space in the buffer
-    if (RAND_bytes(message_buffer + current_buffer_position,
-                   Config::MAX_PACKET_SIZE - current_buffer_position) != 1) {
-        cerr << "Rename - Error during serialization: RAND_bytes failed!" << endl;
-        delete[] message_buffer; // Release memory in case of failure
-        return nullptr;
-    }
     // Return the serialized message buffer
     return message_buffer;
 }
