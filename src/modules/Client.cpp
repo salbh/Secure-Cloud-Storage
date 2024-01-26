@@ -826,7 +826,17 @@ int Client::uploadRequest(string filename) {
     // Successful upload
     return static_cast<int>(Return::SUCCESS);
 }
-
+/**
+ * @brief Client Rename operation
+ * 1) Initiate a file rename request by creating and sending a RenameM1 message with the old filename and
+ * the new filename of the file
+ * 1) Receive and processing a RenameM2 message (SimpleMessage) that contains the result of the operation
+ *
+ * @param old_file_name The current name of the file to be renamed.
+ * @param new_file_name The new name for the file after renaming.
+ *
+ * @return An integer code indicating the result of the file rename request.
+ * */
 int Client::renameRequest(string old_file_name, string new_file_name) {
 
     // RenameM1
@@ -893,7 +903,7 @@ int Client::renameRequest(string old_file_name, string new_file_name) {
         return static_cast<int>(Return::FILE_ALREADY_EXISTS);
     }
     if (renameM2.getMMessageCode() == static_cast<uint8_t>(Result::NACK)) {
-        cout << "Client - Error in renaming the file!" << endl;
+        cout << "Client - renameRequest() - Error in renaming the file!" << endl;
         return static_cast<int>(Return::RENAME_FAILURE);
     }
     return static_cast<int>(Return::SUCCESS);
@@ -1163,7 +1173,7 @@ int Client::deleteRequest(string filename) {
 
 
 int Client::run() {
-    //LOGIN PHASE
+    //AUTHENTICATION PHASE
     cout << "Client - Insert Username: ";
     cin >> m_username;
     string password;
@@ -1210,7 +1220,7 @@ int Client::run() {
     //AUTHENTICATION PHASE
     int result = authenticationRequest();
     if(result != static_cast<int>(Return::AUTHENTICATION_SUCCESS)) {
-        cout << "Authentication failed with error code: " << result << endl;
+        cout << "Client - Authentication failed with error code: " << result << endl;
         return -1;
     }
     cout << "Client - Successful Authentication for " << m_username << endl;
@@ -1241,7 +1251,7 @@ int Client::run() {
                     cout << "Client - List Files operation selected\n" << endl;
                     result = listRequest();
                     if (result != static_cast<int>(Return::SUCCESS)) {
-                        cout << "List failed with error code " << result << endl;
+                        cout << "Client - List failed with error code " << result << endl;
                     }
                     break;
                 }
