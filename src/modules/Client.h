@@ -38,10 +38,6 @@ public:
 
     int run();
     void showMenu();
-    void checkCounterValue();
-    void checkCounterValue(Generic generic_message);
-
-
 };
 
 

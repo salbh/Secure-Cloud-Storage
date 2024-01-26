@@ -45,7 +45,7 @@ public:
 
     static bool isStringValid(const string &input_string);
 
-    static bool isNumeric(const string& str);
+    static int getValidCode(int lowerBound, int upperBound);
 
 private:
     OpenMode m_open_mode;

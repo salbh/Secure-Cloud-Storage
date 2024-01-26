@@ -361,7 +361,6 @@ int Client::listRequest() {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,
                              static_cast<int>(simple_msg_len)) == -1) {
-        cout << "Client - listRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -411,21 +410,18 @@ int Client::listRequest() {
     if (list_msg2.getMessageCode() != static_cast<uint8_t>(Message::LIST_ACK)) {
         return static_cast<int>(Return::WRONG_MSG_CODE);
     }
+
+    // Get list size from the second message
+    uint32_t list_size = list_msg2.getListSize();
+
     // Check if there are files in the storage
-    if (list_msg2.getListSize() == 0) {
-        cout << "Client - listRequest() - There are no files in your storage." << endl;
+    if (list_size == 0) {
+        cout << "Client - There are no files in your storage." << endl;
         return static_cast<int>(Return::SUCCESS);
     }
 
     // Receive message ListM3
 
-    // Get list size from the second message
-    uint32_t list_size = list_msg2.getListSize();
-    // If list size is 0 no other messages will be received
-    if (list_size == 0) {
-        cout << "Client - listRequest() - There are no files in your storage." << endl;
-        return static_cast<int>(Return::SUCCESS);
-    }
     // Get the size of the third message and init buffer
     size_t list_msg3_len = ListM3::getMessageSize(list_size);
     size_t generic_msg3_len = Generic::getMessageSize(list_msg3_len);
@@ -506,7 +502,6 @@ int Client::downloadRequest(const string& filename) {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,
                              Config::MAX_PACKET_SIZE) == -1) {
-        cout << "Client - downloadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -628,12 +623,12 @@ int Client::downloadRequest(const string& filename) {
 
         // Print progress only if it has changed or reached the specified interval
         if (newProgress != lastPrintedProgress && newProgress % progressUpdateInterval == 0) {
-            cout << "\rClient - downloadRequest() - Downloading: " << newProgress << "% complete" << flush;
+            cout << "\rClient - Downloading: " << newProgress << "% complete" << flush;
             lastPrintedProgress = newProgress;
         }
     }
     // Clear the progress message after completion
-    cout << "\rClient - downloadRequest() - Downloading: 100% complete" << endl;
+    cout << "\rClient - Downloading: 100% complete" << endl;
 
     // Return success code if the end of the function is reached
     return static_cast<int>(Return::SUCCESS);
@@ -665,7 +660,7 @@ int Client::uploadRequest(string filename) {
 
     // Check the file size (0 of greater than 4GB)
     if (file_to_upload.getFileSize() == 0 || file_to_upload.getFileSize() > Config::MAX_FILE_SIZE) {
-        cout << "Client - UploadRequest() - Cannot Upload the File! File Empty or larger than 4GB" << endl;
+        cout << "Client - Cannot Upload the File! File Empty or larger than 4GB" << endl;
         return static_cast<int>(Return::WRONG_FILE_SIZE);
     }
 
@@ -678,7 +673,6 @@ int Client::uploadRequest(string filename) {
     Generic generic_msg1(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,Config::MAX_PACKET_SIZE) == -1) {
-        cout << "Client - uploadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize and Send Generic message (UploadM1 message)
@@ -773,7 +767,6 @@ int Client::uploadRequest(string filename) {
         Generic generic_msg3i(m_counter);
         // Encrypt the serialized plaintext and init the GenericMessage fields
         if (generic_msg3i.encrypt(m_session_key, serialized_message,static_cast<int>(upload_msg3i_len)) == -1) {
-            cout << "Client - uploadRequest() - Error during encryption" << endl;
             return static_cast<int>(Return::ENCRYPTION_FAILURE);
         }
         // Serialize Generic message
@@ -795,12 +788,12 @@ int Client::uploadRequest(string filename) {
 
         // Print progress only if it has changed or reached the specified interval
         if (newProgress != lastPrintedProgress && newProgress % progressUpdateInterval == 0) {
-            cout << "\rClient - uploadRequest() - Uploading: " << newProgress << "% complete" << flush;
+            cout << "\rClient - Uploading: " << newProgress << "% complete" << flush;
             lastPrintedProgress = newProgress;
         }
     }
     // Clear the progress message after completion
-    cout << "\rClient - uploadRequest() - Uploading: 100% complete" << endl;
+    cout << "\rClient - Uploading: 100% complete" << endl;
 
     // Safely clean chunk buffer
     OPENSSL_cleanse(chunk_buffer, chunk_size);
@@ -873,7 +866,7 @@ int Client::renameRequest(string old_file_name, string new_file_name) {
     Generic generic_msg1(m_counter);
 
     if(generic_msg1.encrypt(m_session_key, serialized_message, static_cast<int>(renameM1_length)) == -1) {
-        cout << "Client - renameRequest() - Error during encryption" << endl;
+        cout << "Client - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
 
@@ -955,7 +948,6 @@ int Client::logoutRequest() {
     Generic generic_msg1(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,static_cast<int>(logout_msg1_len)) == -1) {
-        cout << "Client - logoutRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize and Send Generic message (UploadM1 message)
@@ -1037,7 +1029,6 @@ int Client::deleteRequest(string filename) {
     Generic generic_msg1(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,Config::MAX_PACKET_SIZE) == -1) {
-        cout << "Client - deleteRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize and Send Generic message (UploadM1 message)
@@ -1095,26 +1086,15 @@ int Client::deleteRequest(string filename) {
 
 
     // Let the user insert the delete confirmation
-    string confirmation_code;
-    cout << "Client - deleteRequest() - Do you really want to delete " << filename << "?\n" << endl;
-    cout << "1. Yes\n"
-            "2. No\n"
-            "Insert Command Code: ";
-    cin >> confirmation_code;
-    // Check if the confirmation string is valid
-    while (!FileManager::isNumeric(confirmation_code) || stoi(confirmation_code) < 1 || stoi(confirmation_code) > 2) {
-        cout << "Client - deleteRequest() - Error Delete Confirm Code" << endl;
-        cout << "1. Yes\n"
-                "2. No\n"
-                "Insert Command Code: ";
-        cin >> confirmation_code;
-    }
-
+    cout << "Client - Do you really want to delete " << filename << "?" << endl;
+    cout << "1. Yes\n";
+    cout << "2. No\n";
+    int confirmation_code = FileManager::getValidCode(1, 2);
 
     // 3) Create the Delete M3 message (Delete Confirmation. SimpleMessage) and increment counter
     SimpleMessage delete_msg3;
     //Delete Confirm OK
-    if (confirmation_code == "1") {
+    if (confirmation_code == 1) {
 
         delete_msg3 = SimpleMessage(static_cast<uint8_t>(Message::DELETE_CONFIRM));
     }
@@ -1131,7 +1111,6 @@ int Client::deleteRequest(string filename) {
     Generic generic_msg3(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg3.encrypt(m_session_key, serialized_message,static_cast<int>(delete_msg3_len)) == -1) {
-        cout << "Client - deleteRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize and Send Generic message (SimpleMessage)
@@ -1200,10 +1179,10 @@ int Client::deleteRequest(string filename) {
 int Client::run() {
     //AUTHENTICATION PHASE
     cout << "Client - Insert Username: ";
-    cin >> m_username;
+    getline(cin, m_username);
     string password;
     cout << "Client - Insert Password: ";
-    cin >> password;
+    getline(cin, password);
 
     // Check the username and password
     if (!FileManager::isStringValid(m_username) || !FileManager::isStringValid(password)) {
@@ -1255,23 +1234,10 @@ int Client::run() {
             // Display Operations Menu
             showMenu();
 
-            cout << "User: " << m_username << endl;
-            // Choose the operation code
-            cout << "Client - Insert operation code: ";
-            string operation_code_string;
-            cin >> operation_code_string;
-
-
-            // Check if the operation code format is valid
-            while (!FileManager::isNumeric(operation_code_string)) {
-                cout << "Client - Invalid operation code!\n" << endl;
-                showMenu();
-                cout << "Client - Insert operation code: ";
-                cin >> operation_code_string;
-            }
+            int operationCode = FileManager::getValidCode(1, 7);
 
             // Execute the operation selected
-            switch (stoi(operation_code_string)) {
+            switch (operationCode) {
                 case 1: {
                     cout << "Client - List Files operation selected\n" << endl;
                     result = listRequest();
@@ -1285,7 +1251,7 @@ int Client::run() {
                     cout << "Client - Download File operation selected\n" << endl;
                     string filename;
                     cout << "Client - Insert the name of the file to download: ";
-                    cin >> filename;
+                    getline(cin, filename);
                     // Check if the filename is valid
                     if (!FileManager::isStringValid(filename)) {
                         cout << "Client - Invalid file name" << endl;
@@ -1294,11 +1260,11 @@ int Client::run() {
                     // Execute the download operation and check the result
                     result = downloadRequest(filename);
                     if (result == static_cast<int>(Return::SUCCESS)) {
-                        cout << "Client - File " << filename << " downloaded successfully\n" << endl;
+                        cout << "Client - File " << filename << " downloaded successfully" << endl;
                     } else if (result == static_cast<int>(Return::FILE_ALREADY_EXISTS)) {
-                        cout << "Client - File " << filename << " already exists\n" << endl;
+                        cout << "Client - File " << filename << " already exists" << endl;
                     } else if (result == static_cast<int>(Return::FILE_NOT_FOUND)) {
-                        cout << "Client - File " << filename << " not found\n" << endl;
+                        cout << "Client - File " << filename << " not found" << endl;
                     } else {
                         cout << "Client - Download failed with error code " << result << endl;
                     }
@@ -1310,7 +1276,7 @@ int Client::run() {
                     // Let the user insert the file name
                     string filename;
                     cout << "Client - Insert the name of the file to upload: ";
-                    cin >> filename;
+                    getline(cin, filename);
                     // Check if the filename is valid
                     if (!FileManager::isStringValid(filename)) {
                         cout << "Client - Invalid File Name" << endl;
@@ -1325,7 +1291,7 @@ int Client::run() {
                     } else if (result != static_cast<int>(Return::SUCCESS))
                         cout << "Client - Upload failed with error code " << result << endl;
                     else
-                        cout << "Client - File " << filename << " uploaded successfully\n" << endl;
+                        cout << "Client - File " << filename << " uploaded successfully" << endl;
                     break;
                 }
 
@@ -1333,14 +1299,14 @@ int Client::run() {
                     cout << "Client - Rename File operation selected\n" << endl;
                     string old_file_name;
                     cout << "Client - Insert the name of the file that you want to rename: ";
-                    cin >> old_file_name;
+                    getline(cin, old_file_name);
                     if (!FileManager::isStringValid(old_file_name)) {
                         cout << "Client - Invalid File Name" << endl;
                         continue;
                     }
                     string new_file_name;
                     cout << "Client - Insert the new file name: ";
-                    cin >> new_file_name;
+                    getline(cin, new_file_name);
                     if (!FileManager::isStringValid(new_file_name)) {
                         cout << "Client - Invalid New File Name" << endl;
                         continue;
@@ -1359,7 +1325,7 @@ int Client::run() {
                     // Let the user insert the file name
                     string filename;
                     cout << "Client - Insert the name of the file to delete: ";
-                    cin >> filename;
+                    getline(cin, filename);
 
                     // Check if the filename is valid
                     if (!FileManager::isStringValid(filename)) {
@@ -1369,30 +1335,29 @@ int Client::run() {
                     // Check if the file exists and is a regular file
                     string file_path = "../data/" + m_username + "/" + filename;
                     if (!FileManager::isFilePresent(file_path)) {
-                        std::cout << "Client - File does not exist or is not a regular file.\n";
+                        cout << "Client - File does not exist or is not a regular file.\n";
                         continue;
                     }
                     // Execute the delete operation and check the result
                     result = deleteRequest(filename);
                     if (result == static_cast<int>(Return::NO_DELETE_CONFIRM)) {
                         cout << "Client - Delete Aborted! " << endl;
-                    }
-                    else if (result != static_cast<int>(Return::SUCCESS))
+                    } else if (result != static_cast<int>(Return::SUCCESS)) {
                         cout << "Client - Delete failed with error code " << result << endl;
-                    else
-                        cout << "Client - File " << filename << " Deleted successfully\n" << endl;
-
-
+                    } else {
+                        cout << "Client - File " << filename << " Deleted successfully" << endl;
+                    }
                     break;
                 }
                 case 6: {
                     cout << "Client - Logout operation selected\n" << endl;
                     // Execute the logout operation and check the result
                     result = logoutRequest();
-                    if (result != static_cast<int>(Return::SUCCESS))
+                    if (result != static_cast<int>(Return::SUCCESS)) {
                         cout << "Client - Logout failed with error code " << result << endl;
-                    else
+                    } else {
                         cout << "Client - User " << m_username << " Logout Successful!\n" << endl;
+                    }
                     return 0;
 
                 case 7:
@@ -1410,7 +1375,7 @@ int Client::run() {
                 }
 
                 default:
-                    cout << "Client - Not-Existent operation code\n" << endl;
+                    cout << "Client - Non-Existent operation code\n" << endl;
                     break;
             }
         }
@@ -1442,14 +1407,13 @@ void Client::incrementCounter() {
  * Displays the Operation Menu options
  */
 void Client::showMenu() {
-    cout << "**MENU**\n"
-            "* 1.list files\n"
-            "* 2.download file\n"
-            "* 3.upload\n"
-            "* 4.rename\n"
-            "* 5.delete\n"
-            "* 6.logout\n"
-            "* 7.exit\n" << endl;
+    // Clear any remaining characters
+    cout << "\n**MENU**\n"
+         << "* 1.list files\n"
+         << "* 2.download file\n"
+         << "* 3.upload\n"
+         << "* 4.rename\n"
+         << "* 5.delete\n"
+         << "* 6.logout\n"
+         << "* 7.exit\n" << endl;
 }
-
-
