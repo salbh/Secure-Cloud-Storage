@@ -42,6 +42,29 @@ void Server::incrementCounter() {
     }
 }
 
+
+/**
+ * @brief Handle an authentication request from the client.
+ * 1) Receive and deserialize an AuthenticationM1 message with the client's username and its ephemeral key (g^a mod p)
+ * 2) Check if the client is registered (its public key is present in the storage) and send an AuthenticationM2 message
+ * to him with the result
+ * 3) If the client is not present: create and serialize a SimpleMessage with the result and send it to the client
+ * 3) If the client is present:
+ * 3.1) Generate the server ephemeral key (g^b mod p)
+ * 3.2) Deserialize the client ephemeral key and derive the shared secret using the server and the client ephemeral keys
+ * 3.3) Generate the session key from the shared secret
+ * 3.4) Serialize the server ephemeral key and create a buffer for concatenating client and server ephemeral keys (<g^a,g^b> message)
+ * 3.5) Generate digital signature for the message using server private key (<g^a,g^b>S)
+ * 3.6) Encrypt all the message <g^a,g^b>S
+ * 3.7) Load the Server's certificate and serialize it
+ * 3.8) Create AuthenticationM3 message and send it to the client
+ * 3.9) Increment the counter to prevent replay attack
+ * 4) Receive an AuthenticationM4 message from the client and deserialize it
+ * 4.1) Decrypt the message and verify the client digital signature using the client public key
+ * 5) Create an AuthenticationM5 SimpleMessage with the result, serialize it and send it to the client.
+ *
+ * @return An integer code indicating the result of the authentication process.
+ */
 int Server::authenticationRequest() {
     // Authentication M1 message
     size_t authentication_m1_length = AuthenticationM1::getMessageSize();
@@ -95,20 +118,7 @@ int Server::authenticationRequest() {
     cout << "Authentication M2 - Username ACK/NACK sent to the client!" << endl;
 
     // Authentication M3
-    string private_key_file = "../resources/private_keys/Server_key.pem";
-    bio = BIO_new_file(private_key_file.c_str(), "r");
-    if (!bio) {
-        BIO_free(bio);
-        cerr << "Authentication M3 - Error in creating the bio structure for the Server private key!" << endl;
-        return static_cast<int>(Return::AUTHENTICATION_FAILURE);
-    }
-    EVP_PKEY* server_private_key = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
-    BIO_free(bio);
-    if(!server_private_key) {
-        EVP_PKEY_free(client_public_key);
-        cerr << "Server private key not found!" << endl;
-        return static_cast<int>(Return::AUTHENTICATION_FAILURE);
-    }
+
 
     // Generate ephemeral key and derive shared secret
     DiffieHellman dh_instance;
@@ -126,7 +136,6 @@ int Server::authenticationRequest() {
         OPENSSL_cleanse(shared_secret, shared_secret_length);
         delete[] shared_secret;
         EVP_PKEY_free(server_ephemeral_key);
-        EVP_PKEY_free(server_private_key);
         EVP_PKEY_free(client_public_key);
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
@@ -146,15 +155,7 @@ int Server::authenticationRequest() {
 
     cout << "AuthenticationM3 - Session Key generated!" << endl;
 
-    // Load server certificate and serialize it
-    const char *certificate_file = "../resources/certificates/Server_cert.pem";
-    CertificateManager* certificateManager = CertificateManager::getInstance();
-    X509* certificate = certificateManager->loadCertificate(certificate_file);
 
-    uint8_t* serialized_certificate = nullptr;
-    int serialized_certificate_length = 0;
-    certificateManager->serializeCertificate(certificate, serialized_certificate, serialized_certificate_length);
-    X509_free(certificate);
 
     // Serialize server ephemeral key
     uint8_t* serialized_server_ephemeral_key = nullptr;
@@ -163,9 +164,6 @@ int Server::authenticationRequest() {
                                                serialized_server_ephemeral_key_length);
     EVP_PKEY_free(server_ephemeral_key);
     if (result != 0) {
-        EVP_PKEY_free(server_private_key);
-        OPENSSL_cleanse(serialized_certificate, serialized_certificate_length);
-        delete[] serialized_certificate;
         OPENSSL_cleanse(serialized_server_ephemeral_key, serialized_server_ephemeral_key_length);
         delete[] serialized_server_ephemeral_key;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
@@ -178,6 +176,21 @@ int Server::authenticationRequest() {
            authenticationM1.getMEphemeralKeyLen());
     memcpy(ephemeral_key_buffer + authenticationM1.getMEphemeralKeyLen(), serialized_server_ephemeral_key,
            serialized_server_ephemeral_key_length);
+
+    string private_key_file = "../resources/private_keys/Server_key.pem";
+    bio = BIO_new_file(private_key_file.c_str(), "r");
+    if (!bio) {
+        BIO_free(bio);
+        cerr << "Authentication M3 - Error in creating the bio structure for the Server private key!" << endl;
+        return static_cast<int>(Return::AUTHENTICATION_FAILURE);
+    }
+    EVP_PKEY* server_private_key = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
+    BIO_free(bio);
+    if(!server_private_key) {
+        EVP_PKEY_free(client_public_key);
+        cerr << "Server private key not found!" << endl;
+        return static_cast<int>(Return::AUTHENTICATION_FAILURE);
+    }
 
     // Generate digital signature using server private key
     unsigned char* digital_signature = nullptr;
@@ -202,7 +215,6 @@ int Server::authenticationRequest() {
     // Check encryption failure
     if (ciphertext_length == -1) {
         delete[] serialized_message;
-        delete[] serialized_certificate;
         delete[] serialized_server_ephemeral_key;
         delete[] ciphertext;
         delete[] ephemeral_key_buffer;
@@ -210,7 +222,18 @@ int Server::authenticationRequest() {
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
 
-    // Create AuthenticationM3 message and serialize
+    // Load server certificate and serialize it
+    const char *certificate_file = "../resources/certificates/Server_cert.pem";
+    CertificateManager* certificateManager = CertificateManager::getInstance();
+    X509* certificate = certificateManager->loadCertificate(certificate_file);
+
+    uint8_t* serialized_certificate = nullptr;
+    int serialized_certificate_length = 0;
+    certificateManager->serializeCertificate(certificate, serialized_certificate, serialized_certificate_length);
+    X509_free(certificate);
+
+
+    // Create AuthenticationM3 message and send it
     AuthenticationM3 authenticationM3(serialized_server_ephemeral_key,
                                       serialized_server_ephemeral_key_length, aesGcm.getIV(),
                                       aad, tag, ciphertext,
@@ -701,6 +724,17 @@ int Server::uploadRequest(uint8_t *plaintext) {
     return static_cast<int>(Return::SUCCESS);
 }
 
+/**
+ * @brief Handle a file rename request on the server side.
+ *
+ * 1) Receive a file rename request from the client with the old filename and the new filename
+ * 2) Rename the file
+ * 3) Send the RenameM2 message with the result of the rename operation
+ *
+ * @param plaintext Pointer to the serialized data containing the RenameM1 message.
+ *
+ * @return An integer code indicating the result of the file rename operation.
+ */
 int Server::renameRequest(uint8_t *plaintext) {
 
     //RenameM1
