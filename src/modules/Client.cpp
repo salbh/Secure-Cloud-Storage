@@ -31,6 +31,33 @@ Client::~Client() {
 
 }
 
+
+/**
+ * @brief Initiate an authentication request to the server.
+ *
+ * 1.1) Create an instance of DiffieHellman for key exchange.
+ * 1.2) Generate a client's ephemeral key pair and serialize it
+ * 1.3) Send an AuthenticationM1 message to the server with the client's ephemeral key and username.
+ * 2) Receive and deserialize an AuthenticationM2 message from the server indicating the existence of the user.
+ * 2.1) If the user not exists: return with an USERNAME_NOT_FOUND code
+ * 2.1) If the user exists proceed with the key exchange and authentication process.
+ * 3.1) Receive from the server and deserialize an AuthenticationM3 message
+ * 3.2) Deserialize the server's ephemeral key
+ * 3.3) Derive shared secret using the client and the server ephemeral keys
+ * 3.4) Generate session key using the derived shared secret
+ * 3.5) Decrypt the digital signature received for the server for the subsequent check
+ * 3.6) Concatenate client's and server's ephemeral keys for digital signature verification <g^a,g^b>
+ * 3.7) Generate a digital signature for the concatenated ephemeral keys <g^a,g^b>S
+ * 3.8) Deserialize the Server's certificate and extract its public key
+ * 3.9) Verify the digital signature using the server's public key
+ * 4.1) Encrypt the message {<g^a,g^b>S}K_session
+ * 4.2) Create, serialize and send an AuthenticationM4 message to the server
+ * 5) Receive, deserialize, decrypt an AuthenticationM5 SimpleMessage to see if the authentication was done correctly
+ * 5.1) If there is an ACK, return an AUTHENTICATION_SUCCESS
+ * 5.2) If there is a NACK, return an AUTHENTICATION_FAILURE
+ *
+ * @return An integer code indicating the result of the authentication process.
+ */
 int Client::authenticationRequest() {
     // Create an instance of DiffieHellman for key exchange
     DiffieHellman dh_instance;
@@ -226,7 +253,7 @@ int Client::authenticationRequest() {
 
     // AuthenticationM4 message
 
-    // Encrypt the decrypted signature for transmission in AuthenticationM4
+    // Encrypt the signature for transmission in AuthenticationM4
     unsigned char *ciphertext = nullptr;
     incrementCounter();
     unsigned char aad[sizeof(uint32_t)];
@@ -245,7 +272,7 @@ int Client::authenticationRequest() {
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
 
-    // Authentication M4 message
+    // Authentication M4 message creation
     serialized_message_length = AuthenticationM4::getMessageSize();
     AuthenticationM4 authenticationM4(aesGcm.getIV(), aad, tag, ciphertext);
     serialized_message = authenticationM4.serialize();
