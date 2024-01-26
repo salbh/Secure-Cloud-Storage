@@ -54,10 +54,9 @@ void Server::incrementCounter() {
  * 3.3) Generate the session key from the shared secret
  * 3.4) Serialize the server ephemeral key and create a buffer for concatenating client and server ephemeral keys (<g^a,g^b> message)
  * 3.5) Generate digital signature for the message using server private key (<g^a,g^b>S)
- * 3.6) Encrypt all the message <g^a,g^b>S
+ * 3.6) Encrypt all the message {<g^a,g^b>S}K_session
  * 3.7) Load the Server's certificate and serialize it
  * 3.8) Create AuthenticationM3 message and send it to the client
- * 3.9) Increment the counter to prevent replay attack
  * 4) Receive an AuthenticationM4 message from the client and deserialize it
  * 4.1) Decrypt the message and verify the client digital signature using the client public key
  * 5) Create an AuthenticationM5 SimpleMessage with the result, serialize it and send it to the client.
