@@ -13,7 +13,6 @@
 #include "SimpleMessage.h"
 #include "Delete.h"
 #include "Authentication.h"
-#include "SimpleMessage.h"
 #include "DiffieHellman.h"
 #include "Hash.h"
 #include "CertificateManager.h"
