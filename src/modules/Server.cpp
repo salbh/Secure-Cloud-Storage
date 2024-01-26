@@ -334,7 +334,19 @@ int Server::authenticationRequest() {
     }
 }
 
-
+/**
+ * @brief Handles a request from a client to list files in the user's folder and sends the file list.
+ *
+ * This function performs the following steps:
+ * 1. Safely cleans the message buffer for the first message (ListM1).
+ * 2. Sends a response message (ListM2) containing the size of the file list.
+ *    a. If the user has no files, ends the function with success.
+ *    b. If the list size is not 0, proceeds to the next step.
+ * 3. Sends a response message (ListM3) containing the actual file list.
+ *
+ * @param plaintext The received message containing the client's list request.
+ * @return An integer code indicating the result of the server's handling of the request.
+ */
 int Server::listRequest(uint8_t *plaintext) {
     // Safely clean plaintext buffer
     OPENSSL_cleanse(plaintext, SimpleMessage::getMessageSize());
@@ -420,6 +432,21 @@ int Server::listRequest(uint8_t *plaintext) {
     return static_cast<int>(Return::SUCCESS);
 }
 
+/**
+ * @brief Handles a download request from a client and sends the requested file in chunks.
+ *
+ * This function performs the following steps:
+ * 1. Receives the client's request message (DownloadM1).
+ * 2. Validates the request and obtains the requested file path.
+ * 3. Sends a response message (DownloadM2) to the client:
+ *    a. If the file is found, sends DOWNLOAD_ACK with the file size.
+ *    b. If the file is not found, sends FILE_NOT_FOUND with size 0.
+ * 4. If the file is not found, the function ends; otherwise, proceeds to send file chunks.
+ * 5. Sends file chunks (DownloadM3+i) to the client in sequential order.
+ *
+ * @param plaintext The received message containing client's download request.
+ * @return An integer code indicating the result of the server's handling of the request.
+ */
 int Server::downloadRequest(uint8_t *plaintext) {
     // Receive message DownloadM1
 

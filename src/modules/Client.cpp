@@ -309,7 +309,19 @@ int Client::authenticationRequest() {
     return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
 }
 
-
+/**
+ * @brief Initiates a request to list files in the user's storage and displays the received file list.
+ *
+ * This function performs the following steps:
+ * 1. Sends a request message (ListM1) to the server.
+ * 2. Receives and decrypts the server's response (ListM2) and validates it:
+ *    a. If the list size is 0, ends the function with success.
+ *    b. If the list size is not 0, proceeds to the next step.
+ * 3. Receives and decrypts the server's response (ListM3) containing the file list.
+ * 4. Displays the obtained file list to the user.
+ *
+ * @return An integer code indicating the result of the list request.
+ */
 int Client::listRequest() {
     // Send message ListM1
 
@@ -436,6 +448,22 @@ int Client::listRequest() {
     return static_cast<int>(Return::SUCCESS);
 }
 
+/**
+ * @brief Initiates a download request to the server for a specified file.
+ *
+ * This function performs the following steps:
+ * 1. Checks if the file to download is already present in the user local folder:
+ *    a. If the file is found, returns FILE_ALREADY_EXISTS.
+ *    b. If the file is not found, sends a DownloadM1 message to the server.
+ * 2. Receives the server's response message (DownloadM2).
+ * 3. Checks if the requested file exists on the server:
+ *    a. If the file is not found, returns FILE_NOT_FOUND.
+ *    b. If the file is found, proceeds to receive and save file chunks in
+ *      sequential order (DownloadM3+i).
+ *
+ * @param filename The name of the file to be downloaded.
+ * @return An integer code indicating the result of the client's download request.
+ */
 int Client::downloadRequest(const string& filename) {
     // Send message DownloadM1
 
@@ -1333,14 +1361,13 @@ int Client::run() {
                     return 0;
 
                 case 7:
-                    cout << "Client - Logout operation selected\n" << endl;
+                    cout << "Client - Exit\n" << endl;
                     // Execute the logout operation and check the result
                     result = logoutRequest();
                     if (result != static_cast<int>(Return::SUCCESS)) {
                         cout << "Client - Logout failed with error code " << result << endl;
                         return 0;
-                    }
-                    else {
+                    } else {
                         cout << "Client - User " << m_username << " Logout Successful!\n" << endl;
                         return 1;
                     }
