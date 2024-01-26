@@ -1353,7 +1353,7 @@ int Client::run() {
             }
         }
     } catch (int error) {
-        cout << "Client - Error detected! " << error << endl;
+        cout << "Client - Error detected! Error code: " << error << endl;
     }
 
     return 0;
@@ -1368,7 +1368,7 @@ void Client::incrementCounter() {
     // Check if re-authenticationRequest is needed
     if (m_counter == Config::MAX_COUNTER_VALUE) {
         // Perform re-authenticationRequest
-        if (authenticationRequest() != static_cast<int>(Return::SUCCESS)) {
+        if (authenticationRequest() != static_cast<int>(Return::AUTHENTICATION_SUCCESS)) {
             throw static_cast<int>(Return::AUTHENTICATION_FAILURE);
         }
     } else {
