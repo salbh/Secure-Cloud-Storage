@@ -45,7 +45,7 @@ Client::~Client() {
  * 3.4) Generate session key using the derived shared secret
  * 3.5) Decrypt the digital signature received for the server for the subsequent check
  * 3.6) Concatenate client's and server's ephemeral keys for digital signature verification <g^a,g^b>
- * 3.7) Generate a digital signature for the concatenated ephemeral keys <g^a,g^b>C
+ * 3.7) Generate a digital signature for the concatenated ephemeral keys <g^a,g^b>C using the client's private key
  * 3.8) Deserialize the Server's certificate and extract its public key
  * 3.9) Verify the digital signature using the server's public key
  * 4.1) Encrypt the message {<g^a,g^b>S}K_session
@@ -90,7 +90,6 @@ int Client::authenticationRequest() {
         delete[] serialized_client_ephemeral_key;
         return static_cast<int>(Return::SEND_FAILURE);
     }
-    cout << "AuthenticationM1 message sent to the server!" << endl;
 
     // Authentication M2 message
     serialized_message_length = SimpleMessage::getMessageSize();
@@ -129,8 +128,6 @@ int Client::authenticationRequest() {
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
 
-    cout << "AuthenticationM3 message received from the server!" << endl;
-
     // Deserialize Authentication M3 message
     AuthenticationM3 authenticationM3 = AuthenticationM3::deserialize(serialized_message);
     OPENSSL_cleanse(serialized_message, serialized_message_length);
@@ -168,8 +165,6 @@ int Client::authenticationRequest() {
     OPENSSL_cleanse(session_key, session_key_length);
     delete[] session_key;
 
-    cout << "AuthenticationM3 - Session key generated!" << endl;
-
     // Check if counters are equal for Authentication M3
     m_counter = 0;
     if(!authenticationM3.checkCounter(m_counter)) {
@@ -194,7 +189,6 @@ int Client::authenticationRequest() {
         delete[] serialized_message;
         delete[] decrypted_signature;
         delete[] serialized_client_ephemeral_key;
-        cerr << "AuthenticationM3 - Error during the decryption!" << endl;
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
 
@@ -228,8 +222,6 @@ int Client::authenticationRequest() {
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
 
-    cout << "AuthenticationM3 - Server certificate verified!" << endl;
-
     // Extract server's public key from the certificate
     EVP_PKEY* server_public_key = certificateManager->getPublicKey(server_certificate);
     X509_free(server_certificate);
@@ -246,8 +238,6 @@ int Client::authenticationRequest() {
         delete[] serialized_message;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
-
-    cout << "AuthenticationM3 - Server Digital Signature verified!" << endl;
 
     // AuthenticationM4 message
 
@@ -266,7 +256,6 @@ int Client::authenticationRequest() {
         // Clean up and return on encryption failure
         delete[] serialized_message;
         delete[] ciphertext;
-        cerr << "AuthenticationM4 - Error during the encryption!" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
 
@@ -283,8 +272,6 @@ int Client::authenticationRequest() {
         // Return on send failure
         return static_cast<int>(Return::SEND_FAILURE);
     }
-    cout << "AuthenticationM4 message sent to the server!" << endl;
-
     // AuthenticationM5
     serialized_message_length = Generic::getMessageSize(Config::MAX_PACKET_SIZE);
     serialized_message = new uint8_t [serialized_message_length];
@@ -296,8 +283,6 @@ int Client::authenticationRequest() {
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
 
-    cout << "AuthenticationM5 message received from the Server" << endl;
-
     // Deserialize AuthenticationM5 message
     Generic generic_message = Generic::deserialize(serialized_message,
                                                    Config::MAX_PACKET_SIZE);
@@ -308,7 +293,6 @@ int Client::authenticationRequest() {
 
     // Decrypt the received ciphertext
     if (generic_message.decrypt(m_session_key, plaintext) == -1) {
-        cerr << "AuthenticationM5 - Error during the decryption!" << endl;
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
 
@@ -328,8 +312,6 @@ int Client::authenticationRequest() {
     // Clean up and reset the counter
     delete[] plaintext;
     m_counter = 0;
-    cout << "AuthenticationM5 - " << "Client Signature verified!" << endl;
-
     // Return success code after successful authentication
     return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
 }
