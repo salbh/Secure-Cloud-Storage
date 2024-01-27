@@ -65,6 +65,7 @@ void Server::incrementCounter() {
  */
 int Server::authenticationRequest() {
     // Authentication M1 message
+    cout << "Authentication request received" << endl;
     size_t authentication_m1_length = AuthenticationM1::getMessageSize();
     uint8_t* serialized_message = new uint8_t[authentication_m1_length];
     int result = m_socket->receive(serialized_message, authentication_m1_length);
