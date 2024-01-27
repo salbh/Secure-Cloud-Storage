@@ -45,7 +45,7 @@ Client::~Client() {
  * 3.4) Generate session key using the derived shared secret
  * 3.5) Decrypt the digital signature received for the server for the subsequent check
  * 3.6) Concatenate client's and server's ephemeral keys for digital signature verification <g^a,g^b>
- * 3.7) Generate a digital signature for the concatenated ephemeral keys <g^a,g^b>C
+ * 3.7) Generate a digital signature for the concatenated ephemeral keys <g^a,g^b>C using the client private key
  * 3.8) Deserialize the Server's certificate and extract its public key
  * 3.9) Verify the digital signature using the server's public key
  * 4.1) Encrypt the message {<g^a,g^b>S}K_session
@@ -90,7 +90,6 @@ int Client::authenticationRequest() {
         delete[] serialized_client_ephemeral_key;
         return static_cast<int>(Return::SEND_FAILURE);
     }
-    cout << "AuthenticationM1 message sent to the server!" << endl;
 
     // Authentication M2 message
     serialized_message_length = SimpleMessage::getMessageSize();
@@ -110,7 +109,7 @@ int Client::authenticationRequest() {
     OPENSSL_cleanse(serialized_message, serialized_message_length);
     if (simpleMessage.getMMessageCode() != static_cast<int>(Result::ACK)) {
         // Inform if the user is not found and return an error code
-        cout << "User " << m_username << " not found!" << endl;
+        cout << "Client - User " << m_username << " not found!" << endl;
         EVP_PKEY_free(client_ephemeral_key);
         delete[] serialized_message;
         delete[] serialized_client_ephemeral_key;
@@ -128,8 +127,6 @@ int Client::authenticationRequest() {
         delete[] serialized_client_ephemeral_key;
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
-
-    cout << "AuthenticationM3 message received from the server!" << endl;
 
     // Deserialize Authentication M3 message
     AuthenticationM3 authenticationM3 = AuthenticationM3::deserialize(serialized_message);
@@ -168,15 +165,12 @@ int Client::authenticationRequest() {
     OPENSSL_cleanse(session_key, session_key_length);
     delete[] session_key;
 
-    cout << "AuthenticationM3 - Session key generated!" << endl;
-
     // Check if counters are equal for Authentication M3
     m_counter = 0;
     if(!authenticationM3.checkCounter(m_counter)) {
         // Clean up and return on counter mismatch
         delete[] serialized_message;
         delete[] serialized_client_ephemeral_key;
-        cerr << "AuthenticationM3 - The counters aren't equal!" << endl;
         return static_cast<int>(Return::WRONG_COUNTER);
     }
 
@@ -194,7 +188,6 @@ int Client::authenticationRequest() {
         delete[] serialized_message;
         delete[] decrypted_signature;
         delete[] serialized_client_ephemeral_key;
-        cerr << "AuthenticationM3 - Error during the decryption!" << endl;
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
 
@@ -228,8 +221,6 @@ int Client::authenticationRequest() {
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
 
-    cout << "AuthenticationM3 - Server certificate verified!" << endl;
-
     // Extract server's public key from the certificate
     EVP_PKEY* server_public_key = certificateManager->getPublicKey(server_certificate);
     X509_free(server_certificate);
@@ -246,8 +237,6 @@ int Client::authenticationRequest() {
         delete[] serialized_message;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
-
-    cout << "AuthenticationM3 - Server Digital Signature verified!" << endl;
 
     // AuthenticationM4 message
 
@@ -266,7 +255,6 @@ int Client::authenticationRequest() {
         // Clean up and return on encryption failure
         delete[] serialized_message;
         delete[] ciphertext;
-        cerr << "AuthenticationM4 - Error during the encryption!" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
 
@@ -283,7 +271,6 @@ int Client::authenticationRequest() {
         // Return on send failure
         return static_cast<int>(Return::SEND_FAILURE);
     }
-    cout << "AuthenticationM4 message sent to the server!" << endl;
 
     // AuthenticationM5
     serialized_message_length = Generic::getMessageSize(Config::MAX_PACKET_SIZE);
@@ -296,8 +283,6 @@ int Client::authenticationRequest() {
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
 
-    cout << "AuthenticationM5 message received from the Server" << endl;
-
     // Deserialize AuthenticationM5 message
     Generic generic_message = Generic::deserialize(serialized_message,
                                                    Config::MAX_PACKET_SIZE);
@@ -308,7 +293,6 @@ int Client::authenticationRequest() {
 
     // Decrypt the received ciphertext
     if (generic_message.decrypt(m_session_key, plaintext) == -1) {
-        cerr << "AuthenticationM5 - Error during the decryption!" << endl;
         return static_cast<int>(Return::DECRYPTION_FAILURE);
     }
 
@@ -321,14 +305,12 @@ int Client::authenticationRequest() {
     // Check the result in the plaintext to ensure successful authentication
     if (static_cast<Result>(plaintext[0]) != Result::ACK) {
         delete[] plaintext;
-        cerr << "AuthenticationM5 - " << "Client Signature not verified!" << endl;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
 
     // Clean up and reset the counter
     delete[] plaintext;
     m_counter = 0;
-    cout << "AuthenticationM5 - " << "Client Signature verified!" << endl;
 
     // Return success code after successful authentication
     return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
@@ -873,7 +855,6 @@ int Client::renameRequest(string old_file_name, string new_file_name) {
     Generic generic_msg1(m_counter);
 
     if(generic_msg1.encrypt(m_session_key, serialized_message, static_cast<int>(renameM1_length)) == -1) {
-        cout << "Client - renameRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
 
@@ -920,11 +901,9 @@ int Client::renameRequest(string old_file_name, string new_file_name) {
 
     // Check the received message code
     if (renameM2.getMMessageCode() == static_cast<uint8_t>(Return::FILE_NOT_FOUND)) {
-        cout << "Client - File not found in the storage!" << endl;
         return static_cast<int>(Return::FILE_NOT_FOUND);
     }
     if (renameM2.getMMessageCode() == static_cast<uint8_t>(Return::FILE_ALREADY_EXISTS)) {
-        cout << "Client - A file with the new file name already exists in the storage!" << endl;
         return static_cast<int>(Return::FILE_ALREADY_EXISTS);
     }
     if (renameM2.getMMessageCode() == static_cast<uint8_t>(Result::NACK)) {
@@ -1347,11 +1326,19 @@ int Client::run() {
                     }
                     // Execute the rename operation and check the result
                     result = renameRequest(old_file_name, new_file_name);
-                    if (result != static_cast<int>(Return::SUCCESS))
-                        cout << "Client - Rename failed with error code " << result << endl;
-                    else
+                    if (result == static_cast<int>(Return::SUCCESS)) {
                         cout << "Client - Name of the File " << old_file_name << " changed successfully in " <<
                              new_file_name << endl;
+                    }
+                    if (result == static_cast<int>(Return::FILE_ALREADY_EXISTS)) {
+                        cout << "Client - A file with the new file name already exists in the storage!" << endl;
+                    }
+                    if (result == static_cast<int>(Return::FILE_NOT_FOUND)) {
+                        cout << "Client - File not found in the storage!" << endl;
+                    }
+                    if (result == static_cast<int>(Return::RECEIVE_FAILURE)) {
+                        cout << "Client - Error in renaming the file!" << endl;
+                    }
                     break;
                 }
                 case 5: {

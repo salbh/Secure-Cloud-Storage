@@ -73,8 +73,6 @@ int Server::authenticationRequest() {
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
 
-    cout << "Authentication M1 ephemeral key and client's username received!" << endl;
-
     AuthenticationM1 authenticationM1 = AuthenticationM1::deserialize(serialized_message);
     OPENSSL_cleanse(serialized_message, authentication_m1_length);
 
@@ -93,10 +91,9 @@ int Server::authenticationRequest() {
     client_public_key = PEM_read_bio_PUBKEY(bio, NULL, NULL, NULL);
     if (!client_public_key) {
         simple_message.setMMessageCode(static_cast<int>(Result::NACK));
-        cerr << "AuthenticationM2 - Username " << m_username << " not found!" << endl;
+        cerr << "Authentication - Username " << m_username << " not found!" << endl;
     } else {
         simple_message.setMMessageCode(static_cast<int>(Result::ACK));
-        cout << "AuthenticationM2 - Username " << m_username << " found!" << endl;
     }
     BIO_free(bio);
 
@@ -113,10 +110,8 @@ int Server::authenticationRequest() {
         EVP_PKEY_free(client_public_key);
         return static_cast<int>(Error::USERNAME_NOT_FOUND);
     }
-    cout << "Authentication M2 - Username ACK/NACK sent to the client!" << endl;
 
     // Authentication M3
-
 
     // Generate ephemeral key and derive shared secret
     DiffieHellman dh_instance;
@@ -151,10 +146,6 @@ int Server::authenticationRequest() {
     OPENSSL_cleanse(session_key, session_key_length);
     delete[] session_key;
 
-    cout << "AuthenticationM3 - Session Key generated!" << endl;
-
-
-
     // Serialize server ephemeral key
     uint8_t* serialized_server_ephemeral_key = nullptr;
     int serialized_server_ephemeral_key_length = 0;
@@ -179,7 +170,7 @@ int Server::authenticationRequest() {
     bio = BIO_new_file(private_key_file.c_str(), "r");
     if (!bio) {
         BIO_free(bio);
-        cerr << "Authentication M3 - Error in creating the bio structure for the Server private key!" << endl;
+        cerr << "Authentication - Error in creating the bio structure for the Server private key!" << endl;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
     EVP_PKEY* server_private_key = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
@@ -216,7 +207,6 @@ int Server::authenticationRequest() {
         delete[] serialized_server_ephemeral_key;
         delete[] ciphertext;
         delete[] ephemeral_key_buffer;
-        cerr << "AuthenticationM3 - Error during the encryption!" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
 
@@ -246,10 +236,8 @@ int Server::authenticationRequest() {
     if (result != 0) {
         EVP_PKEY_free(client_public_key);
         delete[] ephemeral_key_buffer;
-        cerr << "AuthenticationM3 - Error in sending the M3 to the client!" << endl;
         return static_cast<int>(Return::SEND_FAILURE);
     }
-    cout << "AuthenticationM3 message sent to the client!" << endl;
 
     // AuthenticationM4
     serialized_message_length = AuthenticationM4::getMessageSize();
@@ -261,7 +249,6 @@ int Server::authenticationRequest() {
         EVP_PKEY_free(client_public_key);
         return static_cast<int>(Return::RECEIVE_FAILURE);
     }
-    cout << "AuthenticationM4 message received from the client!" << endl;
 
     // Deserialize AuthenticationM4
     AuthenticationM4 authenticationM4 = AuthenticationM4::deserialize(serialized_message);
@@ -271,7 +258,6 @@ int Server::authenticationRequest() {
     if(!authenticationM4.checkCounter(m_counter)) {
         delete[] serialized_message;
         delete[] ephemeral_key_buffer;
-        cerr << "AuthenticationM4 - The counters aren't equal!" << endl;
         return static_cast<int>(Return::WRONG_COUNTER);
     }
 
@@ -306,9 +292,7 @@ int Server::authenticationRequest() {
     // Check signature verification result
     if (!isSignatureVerified) {
         delete[] serialized_message;
-        cout << "AuthenticationM4 - Client Signature not verified!" << endl;
-    } else {
-        cout << "AuthenticationM4 - Client Signature verified!" << endl;
+        cerr << "Authentication - Client Signature not verified!" << endl;
     }
 
     // AuthenticationM5
@@ -329,7 +313,6 @@ int Server::authenticationRequest() {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,
                              static_cast<int>(serialized_message_length)) == -1) {
-        cout << "Client - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -347,10 +330,8 @@ int Server::authenticationRequest() {
 
     // Output result based on signature verification
     if (isSignatureVerified) {
-        cout << "AuthenticationM5 - Signature verified ACK sent to the Client" << endl;
         return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
     } else {
-        cout << "AuthenticationM5 - Signature not verified NACK sent to the Client" << endl;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
 }
@@ -780,18 +761,14 @@ int Server::renameRequest(uint8_t *plaintext) {
     // Check if the file is present and correct
     if (!FileManager::isFilePresent(old_file_name_path)){
         // If the file is not present create the message with FILE_NOT_FOUND
-        cout << "RenameM1 - File not found!" << endl;
         simple_message = SimpleMessage(static_cast<uint8_t>(Return::FILE_NOT_FOUND));
     } else if (FileManager::isFilePresent(new_file_name_path)) {
         // If the file is already present create the message with FILE_ALREADY_EXISTS
-        cout << "RenameM1 - File already exists!" << endl;
         simple_message = SimpleMessage(static_cast<uint8_t>(Return::FILE_ALREADY_EXISTS));
     } else {
         if(rename((old_file_name_path).c_str(), (new_file_name_path).c_str()) != 0) {
-            cout << "RenameM1 - Rename failed!" << endl;
             simple_message = SimpleMessage(static_cast<int>(Result::NACK));
         } else {
-            cout << "RenameM1 - Rename success!" << endl;
             simple_message = SimpleMessage(static_cast<int>(Result::ACK));
         }
     }
@@ -803,7 +780,6 @@ int Server::renameRequest(uint8_t *plaintext) {
 
     if (generic_msg2.encrypt(m_session_key, serialized_message,
                              static_cast<int>(simple_message_length)) == -1) {
-        cout << "Client - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
 
@@ -817,7 +793,6 @@ int Server::renameRequest(uint8_t *plaintext) {
 
     incrementCounter();
 
-    cout << "RenameM2 ACK/NACK message sent to the client!" << endl;
     // Return success code if the end of the function is reached
     return static_cast<int>(Return::SUCCESS);
 }
