@@ -236,20 +236,35 @@ bool FileManager::isStringValid(const string &input_string) {
 }
 
 /**
- * Check if a string is composed only by numbers
- * @param input_string The string to be validated
- * @return True if the string is valid, false otherwise
+ * Get a valid numeric code from the user within the specified range.
+ *
+ * @param lowerBound The lower bound of the valid range.
+ * @param upperBound The upper bound of the valid range.
+ * @return The valid numeric code entered by the user.
  */
-bool FileManager::isNumeric(const string& str) {
-    // Check each character in the string
-    for (char c : str) {
-        if (!isdigit(c)) {
-            // If a non-digit character is found, return false
-            return false;
+int FileManager::getValidCode(int lowerBound, int upperBound) {
+    string input;
+    int userInput;
+
+    // Keep prompting the user until a valid input is provided
+    while (true) {
+        cout << "Insert operation code: ";
+        getline(cin, input);
+
+        // Use stringstream to convert the input to an integer
+        stringstream ss(input);
+        // Check if the input is a valid integer and doesn't have trailing characters
+        if (ss >> userInput && ss.eof()) {
+            // Check if the input is within the valid range
+            if (userInput >= lowerBound && userInput <= upperBound) {
+                break; // Valid input, exit the loop
+            }
         }
+        cout << "Invalid input. Please enter a value between "
+        << lowerBound << " and " << upperBound << "." << endl;
     }
-    // All characters are digits, return true
-    return true;
+    return userInput;
 }
+
 
 

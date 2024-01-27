@@ -381,7 +381,6 @@ int Server::listRequest(uint8_t *plaintext) {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg2.encrypt(m_session_key, serialized_message,
                              static_cast<int>(list_msg2_len)) == -1) {
-        cout << "Server - listRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -397,7 +396,7 @@ int Server::listRequest(uint8_t *plaintext) {
 
     // If list size is 0 no other messages will be sent
     if (list_size == 0) {
-        cout << "Server - listRequest() - The user has no files in the folder." << endl;
+        cout << "Server - The user has no files in the folder." << endl;
         return static_cast<int>(Return::SUCCESS);
     }
 
@@ -416,7 +415,6 @@ int Server::listRequest(uint8_t *plaintext) {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg3.encrypt(m_session_key, serialized_message,
                              static_cast<int>(list_msg3_len)) == -1) {
-        cout << "Server - listRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -486,7 +484,6 @@ int Server::downloadRequest(uint8_t *plaintext) {
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg2.encrypt(m_session_key, serialized_message,
                              static_cast<int>(download_msg2_len)) == -1) {
-        cout << "Server - downloadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize Generic message
@@ -533,7 +530,6 @@ int Server::downloadRequest(uint8_t *plaintext) {
         // Encrypt the serialized plaintext and init the GenericMessage fields
         if (generic_msg3i.encrypt(m_session_key, serialized_message,
                                   static_cast<int>(download_msg3i_len)) == -1) {
-            cout << "Server - downloadRequest() - " << endl;
             return static_cast<int>(Return::ENCRYPTION_FAILURE);
         }
         // Serialize Generic message
@@ -582,7 +578,7 @@ int Server::uploadRequest(uint8_t *plaintext) {
     // Check if the file already exists, otherwise create the message to send
     string file_path = "../data/" + m_username + "/" + (string)upload_msg1.getFilename();
     if (FileManager::isFilePresent(file_path)) {
-        cout << "Server - uploadRequest() - Error during upload request! File already exists" << endl;
+        cout << "Server - Error during upload request! File already exists" << endl;
         upload_msg2 = SimpleMessage(static_cast<uint8_t>(Result::NACK));
     }
     else {
@@ -599,7 +595,6 @@ int Server::uploadRequest(uint8_t *plaintext) {
     Generic generic_msg2(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg2.encrypt(m_session_key, serialized_message,static_cast<int>(upload_msg2_len)) == -1) {
-        cout << "Server - uploadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize and Send Generic message (SimpleMessage)
@@ -690,12 +685,12 @@ int Server::uploadRequest(uint8_t *plaintext) {
 
         // Print progress only if it has changed or reached the specified interval
         if (newProgress != lastPrintedProgress && newProgress % progressUpdateInterval == 0) {
-            cout << "\rServer - uploadRequest() - Uploading: " << newProgress << "% complete" << flush;
+            cout << "\rServer - Uploading: " << newProgress << "% complete" << flush;
             lastPrintedProgress = newProgress;
         }
     }
     // Clear the progress message after completion
-    cout << "\rServer - uploadRequest() - Uploading: 100% complete" << endl;
+    cout << "\rServer - Uploading: 100% complete" << endl;
 
 
     // 4) Send the final packet M3+i+1 message (success file upload. Simple Message)
@@ -710,7 +705,6 @@ int Server::uploadRequest(uint8_t *plaintext) {
     Generic generic_msg3i1(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg3i1.encrypt(m_session_key, serialized_message,static_cast<int>(upload_msg3i1_len)) == -1) {
-        cout << "Server - uploadRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize and Send Generic message (SimpleMessage)
@@ -833,7 +827,6 @@ int Server::deleteRequest(uint8_t *plaintext) {
     Generic generic_msg2(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg2.encrypt(m_session_key, serialized_message,static_cast<int>(delete_msg2_len)) == -1) {
-        cout << "Server - deleteRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize and Send Generic message (SimpleMessage)
@@ -900,7 +893,7 @@ int Server::deleteRequest(uint8_t *plaintext) {
 
     // Delete file and check the result
     if (remove((file_path + file_name).c_str()) == 0) {
-        cout << "Server - deleteRequest() - file " << file_name << " successful deleted!\n"<< endl;
+        cout << "Server - File " << file_name << " successfully deleted!\n"<< endl;
     }
     else {
         return static_cast<int>(Error::DELETE_FILE_ERROR);
@@ -920,7 +913,6 @@ int Server::deleteRequest(uint8_t *plaintext) {
     Generic generic_msg4(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg4.encrypt(m_session_key, serialized_message,static_cast<int>(delete_msg4_len)) == -1) {
-        cout << "Server - deleteRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
     // Serialize and Send Generic message (SimpleMessage)
@@ -970,7 +962,6 @@ int Server::logoutRequest(uint8_t *plaintext) {
     Generic generic_msg2(m_counter);
     // Encrypt the serialized plaintext and init the Generic message fields
     if (generic_msg2.encrypt(m_session_key, serialized_message,static_cast<int>(logout_msg2_len)) == -1) {
-        cout << "Server - logoutRequest() - Error during encryption" << endl;
         return static_cast<int>(Return::ENCRYPTION_FAILURE);
     }
 
@@ -1025,7 +1016,6 @@ void Server::run() {
 
             // Decrypt the received ciphertext
             if (generic_message.decrypt(m_session_key, plaintext) == -1) {
-                cout << "Server - Error! Decryption failed" << endl;
                 return;
             }
             // Check the counter value to prevent replay attacks
@@ -1037,27 +1027,39 @@ void Server::run() {
 
             switch (command) {
                 case static_cast<uint8_t>(Message::LIST_REQUEST):
-                    listRequest(plaintext);
+                    cout << "Server - List request received" << endl;
+                    result = listRequest(plaintext);
+                    cout << "Server - List request finished with code " << result << endl;
                     break;
 
                 case static_cast<uint8_t>(Message::DOWNLOAD_REQUEST):
-                    downloadRequest(plaintext);
+                    cout << "Server - Download request received" << endl;
+                    result = downloadRequest(plaintext);
+                    cout << "Server - Download request finished with code " << result << endl;
                     break;
 
                 case static_cast<uint8_t>(Message::UPLOAD_REQUEST):
-                    uploadRequest(plaintext);
+                    cout << "Server - Upload request received" << endl;
+                    result = uploadRequest(plaintext);
+                    cout << "Server - Upload request finished with code " << result << endl;
                     break;
 
                 case static_cast<uint8_t>(Message::RENAME_REQUEST):
-                    renameRequest(plaintext);
+                    cout << "Server - Rename request received" << endl;
+                    result = renameRequest(plaintext);
+                    cout << "Server - Rename request finished with code " << result << endl;
                     break;
 
                 case static_cast<uint8_t>(Message::DELETE_REQUEST):
-                    deleteRequest(plaintext);
+                    cout << "Server - Delete request received" << endl;
+                    result = deleteRequest(plaintext);
+                    cout << "Server - Delete request finished with code " << result << endl;
                     break;
 
                 case static_cast<uint8_t>(Message::LOGOUT_REQUEST):
-                    logoutRequest(plaintext);
+                    cout << "Server - Logout request received" << endl;
+                    result = logoutRequest(plaintext);
+                    cout << "Server - Logout request finished with code " << result << endl;
                     break;
 
                 default:
