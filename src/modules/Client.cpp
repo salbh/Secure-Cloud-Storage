@@ -132,6 +132,18 @@ int Client::authenticationRequest() {
     AuthenticationM3 authenticationM3 = AuthenticationM3::deserialize(serialized_message);
     OPENSSL_cleanse(serialized_message, serialized_message_length);
 
+    // Check if counters are equal for Authentication M3
+    m_counter = 0;
+    if(!authenticationM3.checkCounter(m_counter)) {
+        // Clean up and return on counter mismatch
+        delete[] serialized_message;
+        delete[] serialized_client_ephemeral_key;
+        cerr << "AuthenticationM3 - The counters aren't equal!" << endl;
+        return static_cast<int>(Return::WRONG_COUNTER);
+    }
+
+    incrementCounter();
+
     // Deserialize server's ephemeral key from Authentication M3
     EVP_PKEY* server_ephemeral_key = dh_instance.deserializeEphemeralKey(
             const_cast<uint8_t *>(authenticationM3.getMEphemeralKey()),
@@ -164,16 +176,6 @@ int Client::authenticationRequest() {
     delete[] shared_secret;
     OPENSSL_cleanse(session_key, session_key_length);
     delete[] session_key;
-
-    // Check if counters are equal for Authentication M3
-    m_counter = 0;
-    if(!authenticationM3.checkCounter(m_counter)) {
-        // Clean up and return on counter mismatch
-        delete[] serialized_message;
-        delete[] serialized_client_ephemeral_key;
-        cerr << "AuthenticationM3 - The counters aren't equal!" << endl;
-        return static_cast<int>(Return::WRONG_COUNTER);
-    }
 
     // Decrypt the digital signature in Authentication M3
     AesGcm aesGcm = AesGcm(m_session_key);
@@ -243,7 +245,6 @@ int Client::authenticationRequest() {
 
     // Encrypt the signature for transmission in AuthenticationM4
     unsigned char *ciphertext = nullptr;
-    incrementCounter();
     unsigned char aad[sizeof(uint32_t)];
     memcpy(aad, &m_counter, Config::AAD_LEN);
     unsigned char tag[Config::AES_TAG_LEN];
@@ -272,10 +273,11 @@ int Client::authenticationRequest() {
         // Return on send failure
         return static_cast<int>(Return::SEND_FAILURE);
     }
+
+    incrementCounter();
     // AuthenticationM5
     serialized_message_length = Generic::getMessageSize(Config::MAX_PACKET_SIZE);
     serialized_message = new uint8_t [serialized_message_length];
-    incrementCounter();
     result = m_socket->receive(serialized_message, serialized_message_length);
     if (result != 0) {
         // Clean up and return on receive failure

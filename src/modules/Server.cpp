@@ -229,7 +229,6 @@ int Server::authenticationRequest() {
                                       serialized_certificate, serialized_certificate_length);
     serialized_message = authenticationM3.serialize();
     result = m_socket->send(serialized_message, authenticationM3.getMessageSize());
-    incrementCounter();
     OPENSSL_cleanse(serialized_message, serialized_message_length);
     delete[] serialized_certificate;
     delete[] serialized_server_ephemeral_key;
@@ -239,6 +238,7 @@ int Server::authenticationRequest() {
         delete[] ephemeral_key_buffer;
         return static_cast<int>(Return::SEND_FAILURE);
     }
+    incrementCounter();
 
     // AuthenticationM4
     serialized_message_length = AuthenticationM4::getMessageSize();
@@ -261,6 +261,8 @@ int Server::authenticationRequest() {
         delete[] ephemeral_key_buffer;
         return static_cast<int>(Return::WRONG_COUNTER);
     }
+
+    incrementCounter();
 
     // Decrypt the digital signature in AuthenticationM4
     unsigned char* decrypted_signature = nullptr;
@@ -309,7 +311,6 @@ int Server::authenticationRequest() {
     // Serialize the SimpleMessage to obtain a byte buffer
     serialized_message = simple_message.serialize();
     // Create a Generic message with the current counter value
-    incrementCounter();
     Generic generic_msg1(m_counter);
     // Encrypt the serialized plaintext and init the GenericMessage fields
     if (generic_msg1.encrypt(m_session_key, serialized_message,
