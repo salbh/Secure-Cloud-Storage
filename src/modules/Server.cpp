@@ -84,7 +84,7 @@ int Server::authenticationRequest() {
     size_t serialized_message_length;
     if (!bio) {
         BIO_free(bio);
-        cerr << "Authentication M1 - Error in creating the bio structure for the Client public key!" << endl;
+        cerr << "Authentication - Error in creating the bio structure for the Client public key!" << endl;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
     m_username = (string)authenticationM1.getMUsername();
