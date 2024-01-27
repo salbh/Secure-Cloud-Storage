@@ -331,8 +331,10 @@ int Server::authenticationRequest() {
 
     // Output result based on signature verification
     if (isSignatureVerified) {
+        cout << "Authentication request finished with code " << static_cast<int>(Return::AUTHENTICATION_SUCCESS) << endl;
         return static_cast<int>(Return::AUTHENTICATION_SUCCESS);
     } else {
+        cout << "Authentication request finished with code " << static_cast<int>(Return::AUTHENTICATION_FAILURE) << endl;
         return static_cast<int>(Return::AUTHENTICATION_FAILURE);
     }
 }
