@@ -1,7 +1,6 @@
 #include <string>
 #include <cstring>
 #include <iostream>
-#include <openssl/rand.h>
 #include "Rename.h"
 #include "CodesManager.h"
 

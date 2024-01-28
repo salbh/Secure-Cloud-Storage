@@ -146,7 +146,7 @@ void receiveGenericMessage(SocketManager &socket) {
         cout << dec << endl << endl;
         // Output the message code of the received SimpleMessage
         cout << "SocketManagerTest - Client - Received message code: " <<
-             (int) simple_message.getMessageCode() << endl;
+             (int) simple_message.getMMessageCode() << endl;
     }
     // Free the allocated memory for the plaintext buffer
     delete[] plaintext;
