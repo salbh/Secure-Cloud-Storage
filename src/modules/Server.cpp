@@ -934,7 +934,7 @@ int Server::deleteRequest(uint8_t *plaintext) {
 
 
 /**
- * Client side logout request operation
+ * Server side logout request operation
  * 1) Waits a logout message request from the client (SimpleMessage)
  * 2) send a response to the client indicating the success or failure of the logout request (SimpleMessage)
  * @param plaintext The message containing the logout request

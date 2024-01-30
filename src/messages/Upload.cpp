@@ -29,7 +29,7 @@ UploadM1::UploadM1(std::string&  filename, size_t file_size) {
     strncpy(m_filename, filename.c_str(), Config::FILE_NAME_LEN);
 
     // Set the m_filesize and ensure that does not exceed a maximum value of 4GB (converted in uint32_t), if so is set to 0
-    m_file_size = (file_size < 4UL * 1024 * 1024 * 1024) ? (uint32_t)file_size : 0;
+    m_file_size = (file_size < 4UL * 1000 * 1000 * 1000) ? (uint32_t)file_size : 0;
 }
 
 

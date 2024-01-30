@@ -12,21 +12,21 @@ private:
     SocketManager *m_socket;
     unsigned char m_session_key[Config::AES_KEY_LEN];
 
-    int authenticationRequest(); //francesco
+    int authenticationRequest();
 
-    int listRequest(uint8_t *plaintext); //totore
+    int listRequest(uint8_t *plaintext);
 
-    int downloadRequest(uint8_t *plaintext); //totore
+    int downloadRequest(uint8_t *plaintext);
 
-    int uploadRequest(uint8_t *plaintext); //luca
+    int uploadRequest(uint8_t *plaintext);
 
-    int renameRequest(uint8_t *plaintext); //francesco
+    int renameRequest(uint8_t *plaintext);
 
-    int deleteRequest(uint8_t *plaintext); //luca
+    int deleteRequest(uint8_t *plaintext);
 
-    int logoutRequest(uint8_t *plaintext); //luca
+    int logoutRequest(uint8_t *plaintext);
 
-    void incrementCounter(); //totore
+    void incrementCounter();
 
 
 public:
