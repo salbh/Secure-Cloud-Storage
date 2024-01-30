@@ -1392,12 +1392,13 @@ void Client::incrementCounter() {
  */
 void Client::showMenu() {
     // Clear any remaining characters
-    cout << "\n**MENU**\n"
+    cout << "\n----------- MENU -------------" << endl
          << "* 1.list files\n"
          << "* 2.download file\n"
          << "* 3.upload\n"
          << "* 4.rename\n"
          << "* 5.delete\n"
          << "* 6.logout\n"
-         << "* 7.exit\n" << endl;
+         << "* 7.exit\n"
+         << "------------------------------" << endl;
 }
