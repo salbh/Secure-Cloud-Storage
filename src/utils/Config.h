@@ -20,9 +20,10 @@ public:
     static constexpr unsigned int AES_KEY_LEN = 16;
     static constexpr unsigned int AAD_LEN = 4;
     static constexpr unsigned int IV_LEN = 12;
-    static constexpr long CHUNK_SIZE = 1024 * 1024; // 1 MB chunk size in bytes
+    static constexpr long KB_SIZE = 1000; // 1 KB = 1000 bytes in decimal notation
+    static constexpr long CHUNK_SIZE = KB_SIZE * KB_SIZE; // 1 MB chunk size in bytes
     static constexpr uint32_t MAX_COUNTER_VALUE = 0xffffffff;
-    static constexpr size_t MAX_FILE_SIZE = 4UL * 1000 * 1000 * 1000;
+    static constexpr size_t MAX_FILE_SIZE = 4UL * KB_SIZE * KB_SIZE * KB_SIZE;
 };
 
 #endif //SECURE_CLOUD_STORAGE_CONFIG_H

@@ -48,8 +48,8 @@ void testReadAndWriteChunks() {
     ofstream file("test_2.txt", ios::binary);
     assert(file.is_open());
 
-    const streamsize MEGABYTE = 1000 * 1000;
-    streamsize size = (10 * MEGABYTE) + (50 * 1000); // 10 MB size + 50 KB in last chunk
+    const streamsize MEGABYTE = Config::KB_SIZE * Config::KB_SIZE;
+    streamsize size = (10 * MEGABYTE) + (50 * Config::KB_SIZE); // 10 MB size + 50 KB in last chunk
 
     // Write actual data to the file to achieve the desired size
     for (int i = 0; i < size; i++) {
@@ -71,7 +71,7 @@ void testReadAndWriteChunks() {
     // Check last chunk size
     streamsize lastChunkSize = fm_read.getLastChunkSize();
     cout << "Last chunk size in bytes: " << lastChunkSize << endl;
-    assert(lastChunkSize == 50 * 1000);
+    assert(lastChunkSize == 50 * Config::KB_SIZE);
 
     // Open another file in write mode to copy the content
     FileManager fm_write("test_2_copy.txt", FileManager::OpenMode::WRITE);
