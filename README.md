@@ -28,9 +28,11 @@ The project was developed by using **C++17**, and the implementation of cryptogr
 ## Programming Languages and Tools
 <p align="center">
 	<img src="https://skillicons.dev/icons?i=cpp"/>
-  <img src="https://skillicons.dev/icons?i=clion"/>
+	<a href= https://www.jetbrains.com/clion/ target="_blank" rel="noreferrer">
+  		<img src="https://skillicons.dev/icons?i=clion"/>
+	</a>
 	<a href="https://www.openssl.org/" target="_blank" rel="noreferrer">
-    	<img src="https://www.vectorlogo.zone/logos/openssl/openssl-ar21.svg" alt="OpenSSL" width="100" height="50"/>
+		<img src="https://www.vectorlogo.zone/logos/openssl/openssl-ar21.svg" alt="OpenSSL" width="100" height="50"/>
 	</a>
 </p>
 </br></br>
