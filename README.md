@@ -54,7 +54,7 @@ The project implements a **Client-Server application** that resembles a **Cloud 
 	+ Long-term RSA key-pair
 	+ Long-term private key is password protected
 - **Server**:
-	+ Its own certificate signd by a CA
+	+ Its own certificate signed by a CA
 	+ Knows the username of every registered user
 	+ Knows the RSA public key of every user
 </br></br>
